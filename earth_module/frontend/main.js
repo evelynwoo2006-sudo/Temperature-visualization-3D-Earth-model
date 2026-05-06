@@ -691,18 +691,28 @@ function mergeApiWithCountryCenters(apiItems) {
 
 function buildCountryPointItems(apiItems) {
   const byCode = new Map();
+  const byName = new Map();
+  
   for (const item of apiItems) {
     const code = String(item.country_code || "").toUpperCase();
-    if (!code) continue;
-    if (!byCode.has(code)) byCode.set(code, item);
+    const nameEn = String(item.country || "").toLowerCase();
+    const nameZh = String(item.country_zh || "").toLowerCase();
+    
+    if (code) byCode.set(code, item);
+    if (nameEn) byName.set(nameEn, item);
+    if (nameZh) byName.set(nameZh, item);
   }
 
   const result = [];
   for (const area of countryAreas) {
     const code = String(area.iso2 || "").toUpperCase();
-    if (!code || code === "-99") continue;
-
-    const api = byCode.get(code) || null;
+    const name = String(area.countryName || "").toLowerCase();
+    
+    // 尝试通过代码匹配，再尝试通过名称匹配
+    let api = null;
+    if (code && code !== "-99") api = byCode.get(code);
+    if (!api && name) api = byName.get(name);
+    
     const lat = Number(api?.lat ?? area.center?.lat);
     const lon = Number(api?.lon ?? area.center?.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
@@ -2208,90 +2218,31 @@ function latLongToVector3(lat, lon, radius) {
 
 function getFrontendSampleData() {
   return [
-    {
-      country: "China",
-      country_zh: "中国",
-      country_code: "CN",
-      city: "Beijing",
-      lat: 39.9042,
-      lon: 116.4074,
-      temperature: 18,
-      humidity: 35,
-      wind_speed: 2.8,
-      wind_deg: 40,
-      weather: "Clear",
-      source: "sample",
-    },
-    {
-      country: "United States",
-      country_zh: "美国",
-      country_code: "US",
-      city: "Washington",
-      lat: 38.9072,
-      lon: -77.0369,
-      temperature: 22,
-      humidity: 50,
-      wind_speed: 3.6,
-      wind_deg: 210,
-      weather: "Clouds",
-      source: "sample",
-    },
-    {
-      country: "United Kingdom",
-      country_zh: "英国",
-      country_code: "GB",
-      city: "London",
-      lat: 51.5072,
-      lon: -0.1276,
-      temperature: 12,
-      humidity: 70,
-      wind_speed: 5.1,
-      wind_deg: 260,
-      weather: "Clouds",
-      source: "sample",
-    },
-    {
-      country: "India",
-      country_zh: "印度",
-      country_code: "IN",
-      city: "New Delhi",
-      lat: 28.6139,
-      lon: 77.209,
-      temperature: 33,
-      humidity: 40,
-      wind_speed: 2.2,
-      wind_deg: 120,
-      weather: "Haze",
-      source: "sample",
-    },
-    {
-      country: "Russia",
-      country_zh: "俄罗斯",
-      country_code: "RU",
-      city: "Moscow",
-      lat: 55.7558,
-      lon: 37.6173,
-      temperature: 3,
-      humidity: 65,
-      wind_speed: 6.2,
-      wind_deg: 300,
-      weather: "Snow",
-      source: "sample",
-    },
-    {
-      country: "Singapore",
-      country_zh: "新加坡",
-      country_code: "SG",
-      city: "Singapore",
-      lat: 1.3521,
-      lon: 103.8198,
-      temperature: 31,
-      humidity: 70,
-      wind_speed: 3.5,
-      wind_deg: 160,
-      weather: "Clouds",
-      source: "sample",
-    },
+    {"country": "China", "country_zh": "中国", "country_code": "CN", "city": "Beijing", "lat": 39.9042, "lon": 116.4074, "temperature": 18, "humidity": 35, "wind_speed": 2.8, "wind_deg": 40, "weather": "Clear", "source": "sample"},
+    {"country": "United States", "country_zh": "美国", "country_code": "US", "city": "Washington", "lat": 38.9072, "lon": -77.0369, "temperature": 22, "humidity": 50, "wind_speed": 3.6, "wind_deg": 210, "weather": "Clouds", "source": "sample"},
+    {"country": "Brazil", "country_zh": "巴西", "country_code": "BR", "city": "Brasilia", "lat": -15.7939, "lon": -47.8828, "temperature": 29, "humidity": 62, "wind_speed": 4.2, "wind_deg": 160, "weather": "Rain", "source": "sample"},
+    {"country": "United Kingdom", "country_zh": "英国", "country_code": "GB", "city": "London", "lat": 51.5072, "lon": -0.1276, "temperature": 12, "humidity": 70, "wind_speed": 5.1, "wind_deg": 260, "weather": "Clouds", "source": "sample"},
+    {"country": "France", "country_zh": "法国", "country_code": "FR", "city": "Paris", "lat": 48.8566, "lon": 2.3522, "temperature": 14, "humidity": 60, "wind_speed": 4.8, "wind_deg": 240, "weather": "Clouds", "source": "sample"},
+    {"country": "Russia", "country_zh": "俄罗斯", "country_code": "RU", "city": "Moscow", "lat": 55.7558, "lon": 37.6173, "temperature": 3, "humidity": 65, "wind_speed": 6.2, "wind_deg": 300, "weather": "Snow", "source": "sample"},
+    {"country": "India", "country_zh": "印度", "country_code": "IN", "city": "New Delhi", "lat": 28.6139, "lon": 77.209, "temperature": 33, "humidity": 40, "wind_speed": 2.2, "wind_deg": 120, "weather": "Haze", "source": "sample"},
+    {"country": "Japan", "country_zh": "日本", "country_code": "JP", "city": "Tokyo", "lat": 35.6762, "lon": 139.6503, "temperature": 19, "humidity": 55, "wind_speed": 3.0, "wind_deg": 80, "weather": "Clear", "source": "sample"},
+    {"country": "Australia", "country_zh": "澳大利亚", "country_code": "AU", "city": "Canberra", "lat": -35.2809, "lon": 149.1300, "temperature": 24, "humidity": 45, "wind_speed": 4.0, "wind_deg": 200, "weather": "Clear", "source": "sample"},
+    {"country": "Singapore", "country_zh": "新加坡", "country_code": "SG", "city": "Singapore", "lat": 1.3521, "lon": 103.8198, "temperature": 31, "humidity": 70, "wind_speed": 3.5, "wind_deg": 160, "weather": "Clouds", "source": "sample"},
+    {"country": "South Africa", "country_zh": "南非", "country_code": "ZA", "city": "Pretoria", "lat": -25.7479, "lon": 28.2293, "temperature": 27, "humidity": 35, "wind_speed": 4.6, "wind_deg": 140, "weather": "Clear", "source": "sample"},
+    {"country": "Canada", "country_zh": "加拿大", "country_code": "CA", "city": "Ottawa", "lat": 45.4215, "lon": -75.6972, "temperature": -2, "humidity": 75, "wind_speed": 5.4, "wind_deg": 330, "weather": "Snow", "source": "sample"},
+    {"country": "Germany", "country_zh": "德国", "country_code": "DE", "city": "Berlin", "lat": 52.5200, "lon": 13.4050, "temperature": 12, "humidity": 65, "wind_speed": 4.2, "wind_deg": 240, "weather": "Clouds", "source": "sample"},
+    {"country": "Argentina", "country_zh": "阿根廷", "country_code": "AR", "city": "Buenos Aires", "lat": -34.6037, "lon": -58.3816, "temperature": 15, "humidity": 70, "wind_speed": 3.1, "wind_deg": 180, "weather": "Clear", "source": "sample"},
+    {"country": "Egypt", "country_zh": "埃及", "country_code": "EG", "city": "Cairo", "lat": 30.0444, "lon": 31.2357, "temperature": 28, "humidity": 40, "wind_speed": 4.5, "wind_deg": 350, "weather": "Clear", "source": "sample"},
+    {"country": "Italy", "country_zh": "意大利", "country_code": "IT", "city": "Rome", "lat": 41.9028, "lon": 12.4964, "temperature": 20, "humidity": 55, "wind_speed": 2.5, "wind_deg": 210, "weather": "Clear", "source": "sample"},
+    {"country": "Mexico", "country_zh": "墨西哥", "country_code": "MX", "city": "Mexico City", "lat": 19.4326, "lon": -99.1332, "temperature": 24, "humidity": 45, "wind_speed": 3.8, "wind_deg": 90, "weather": "Clouds", "source": "sample"},
+    {"country": "Thailand", "country_zh": "泰国", "country_code": "TH", "city": "Bangkok", "lat": 13.7563, "lon": 100.5018, "temperature": 34, "humidity": 65, "wind_speed": 2.2, "wind_deg": 180, "weather": "Haze", "source": "sample"},
+    {"country": "Turkey", "country_zh": "土耳其", "country_code": "TR", "city": "Ankara", "lat": 39.9334, "lon": 32.8597, "temperature": 18, "humidity": 45, "wind_speed": 3.4, "wind_deg": 120, "weather": "Clear", "source": "sample"},
+    {"country": "Saudi Arabia", "country_zh": "沙特阿拉伯", "country_code": "SA", "city": "Riyadh", "lat": 24.7136, "lon": 46.6753, "temperature": 38, "humidity": 15, "wind_speed": 5.2, "wind_deg": 330, "weather": "Clear", "source": "sample"},
+    {"country": "Indonesia", "country_zh": "印度尼西亚", "country_code": "ID", "city": "Jakarta", "lat": -6.2088, "lon": 106.8456, "temperature": 32, "humidity": 75, "wind_speed": 2.8, "wind_deg": 270, "weather": "Rain", "source": "sample"},
+    {"country": "Spain", "country_zh": "西班牙", "country_code": "ES", "city": "Madrid", "lat": 40.4168, "lon": -3.7038, "temperature": 22, "humidity": 40, "wind_speed": 3.2, "wind_deg": 240, "weather": "Clear", "source": "sample"},
+    {"country": "Norway", "country_zh": "挪威", "country_code": "NO", "city": "Oslo", "lat": 59.9139, "lon": 10.7522, "temperature": 8, "humidity": 60, "wind_speed": 4.1, "wind_deg": 300, "weather": "Clouds", "source": "sample"},
+    {"country": "New Zealand", "country_zh": "新西兰", "country_code": "NZ", "city": "Wellington", "lat": -41.2865, "lon": 174.7762, "temperature": 14, "humidity": 75, "wind_speed": 8.5, "wind_deg": 160, "weather": "Rain", "source": "sample"},
+    {"country": "South Korea", "country_zh": "韩国", "country_code": "KR", "city": "Seoul", "lat": 37.5665, "lon": 126.9780, "temperature": 18, "humidity": 50, "wind_speed": 3.0, "wind_deg": 90, "weather": "Clear", "source": "sample"}
   ];
 }
 
