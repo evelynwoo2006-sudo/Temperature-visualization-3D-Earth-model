@@ -643,18 +643,18 @@ async function loadTemperaturePoints() {
 
 async function fetchTemperatureData() {
   try {
-    const res = await fetch(buildNoCacheUrl(CONFIG.apiUrl), {
-      method: "GET",
-      cache: "no-store",
-      headers: { "Cache-Control": "no-cache" },
-    });
+    // 静态部署环境下，简化 fetch 调用，避免某些服务器不支持特殊的 headers
+    const res = await fetch(CONFIG.apiUrl);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const payload = await res.json();
     ui.statusText.textContent = "Live data";
     return { payload, sourceLabel: "live" };
   } catch (e) {
+    console.error("Fetch temperature data failed:", e);
     ui.statusText.textContent = "API unavailable";
-    return { payload: [], sourceLabel: "offline" };
+    // 如果 fetch 失败，回退到内置的示例数据，确保地球不是空的
+    const fallbackData = getFrontendSampleData();
+    return { payload: fallbackData, sourceLabel: "offline (fallback)" };
   }
 }
 
@@ -728,6 +728,12 @@ function buildCountryPointItems(apiItems) {
 
 async function syncRealtimeForAllPointsBulk() {
   if (!pointsGroup || pointsGroup.children.length === 0) return;
+
+  // 如果 apiUrl 指向的是静态 JSON 文件，说明处于静态演示模式，跳过实时同步
+  if (CONFIG.apiUrl.endsWith(".json")) {
+    console.log("Static mode: skipping realtime sync");
+    return;
+  }
 
   const bulkUrl = String(CONFIG.apiWeatherUrl || "").replace(/\/api\/weather\b/, "/api/weather_bulk");
   if (!bulkUrl || bulkUrl === CONFIG.apiWeatherUrl) return;
@@ -847,7 +853,7 @@ function buildTemperaturePoints(items) {
       map: glowTexture,
       color,
       transparent: true,
-      opacity: isPlaceholder ? 0.22 : 0.55,
+      opacity: isPlaceholder ? 0.22 : 0.85,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
