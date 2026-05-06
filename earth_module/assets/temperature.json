@@ -1,0 +1,16 @@
+[
+    {"country": "China", "country_zh": "中国", "country_code": "CN", "city": "Beijing", "lat": 39.9042, "lon": 116.4074, "temperature": 18.0, "humidity": 35, "weather": "Clear", "wind_speed": 2.8, "wind_deg": 40, "source": "static"},
+    {"country": "United States", "country_zh": "美国", "country_code": "US", "city": "Washington", "lat": 38.9072, "lon": -77.0369, "temperature": 22.0, "humidity": 50, "weather": "Clouds", "wind_speed": 3.6, "wind_deg": 210, "source": "static"},
+    {"country": "Brazil", "country_zh": "巴西", "country_code": "BR", "city": "Brasilia", "lat": -15.7939, "lon": -47.8828, "temperature": 29.0, "humidity": 62, "weather": "Rain", "wind_speed": 4.2, "wind_deg": 160, "source": "static"},
+    {"country": "United Kingdom", "country_zh": "英国", "country_code": "GB", "city": "London", "lat": 51.5072, "lon": -0.1276, "temperature": 12.0, "humidity": 70, "weather": "Clouds", "wind_speed": 5.1, "wind_deg": 260, "source": "static"},
+    {"country": "France", "country_zh": "法国", "country_code": "FR", "city": "Paris", "lat": 48.8566, "lon": 2.3522, "temperature": 14.0, "humidity": 60, "weather": "Clouds", "wind_speed": 4.8, "wind_deg": 240, "source": "static"},
+    {"country": "Russia", "country_zh": "俄罗斯", "country_code": "RU", "city": "Moscow", "lat": 55.7558, "lon": 37.6173, "temperature": 3.0, "humidity": 65, "weather": "Snow", "wind_speed": 6.2, "wind_deg": 300, "source": "static"},
+    {"country": "India", "country_zh": "印度", "country_code": "IN", "city": "New Delhi", "lat": 28.6139, "lon": 77.2090, "temperature": 33.0, "humidity": 40, "weather": "Haze", "wind_speed": 2.2, "wind_deg": 120, "source": "static"},
+    {"country": "Japan", "country_zh": "日本", "country_code": "JP", "city": "Tokyo", "lat": 35.6762, "lon": 139.6503, "temperature": 19.0, "humidity": 55, "weather": "Clear", "wind_speed": 3.0, "wind_deg": 80, "source": "static"},
+    {"country": "Australia", "country_zh": "澳大利亚", "country_code": "AU", "city": "Canberra", "lat": -35.2809, "lon": 149.1300, "temperature": 24.0, "humidity": 45, "weather": "Clear", "wind_speed": 4.0, "wind_deg": 200, "source": "static"},
+    {"country": "Singapore", "country_zh": "新加坡", "country_code": "SG", "city": "Singapore", "lat": 1.3521, "lon": 103.8198, "temperature": 31.0, "humidity": 70, "weather": "Clouds", "wind_speed": 3.5, "wind_deg": 160, "source": "static"},
+    {"country": "South Africa", "country_zh": "南非", "country_code": "ZA", "city": "Pretoria", "lat": -25.7479, "lon": 28.2293, "temperature": 27.0, "humidity": 35, "weather": "Clear", "wind_speed": 4.6, "wind_deg": 140, "source": "static"},
+    {"country": "Canada", "country_zh": "加拿大", "country_code": "CA", "city": "Ottawa", "lat": 45.4215, "lon": -75.6972, "temperature": -2.0, "humidity": 75, "weather": "Snow", "wind_speed": 5.4, "wind_deg": 330, "source": "static"},
+    {"country": "Germany", "country_zh": "德国", "country_code": "DE", "city": "Berlin", "lat": 52.5200, "lon": 13.4050, "temperature": 12.0, "humidity": 65, "weather": "Clouds", "wind_speed": 4.2, "wind_deg": 240, "source": "static"},
+    {"country": "Germany", "country_zh": "德国", "country_code": "DE", "city": "Bielefeld", "lat": 52.0302, "lon": 8.5325, "temperature": 11.0, "humidity": 70, "weather": "Clouds", "wind_speed": 4.8, "wind_deg": 260, "source": "static"}
+]

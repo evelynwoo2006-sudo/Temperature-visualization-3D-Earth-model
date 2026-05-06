@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Temperature Monitor</title>
+    <link rel="stylesheet" href="/earth_module/style.css" />
+    <style>
+        .user-display {
+            background: rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-left: 12px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="topbar">
+            <div class="title">
+                <div class="title__main">Global Temperature Monitor</div>
+                <div class="title__sub">Real-time temperature visualization on a 3D Earth</div>
+            </div>
+            <div class="topbar__right">
+                <div class="status" id="statusText">Connecting…</div>
+            </div>
+        </header>
+
+        <main class="stage">
+            <canvas id="threeCanvas"></canvas>
+
+            <div class="searchbar card" id="searchBar">
+                <input class="searchbar__input" id="searchInput" type="text" placeholder="Search country / city (国家/城市)…" autocomplete="off" spellcheck="false" />
+                <button class="searchbar__clear" id="searchClear" type="button">×</button>
+                <div class="searchbar__results" id="searchResults" style="display: none"></div>
+            </div>
+
+            <div class="hud">
+                <div class="legend card">
+                    <div class="card__title">Temperature Legend</div>
+                    <div class="legend__bar" id="legendBar"></div>
+                    <div class="legend__labels">
+                        <span>&lt; 0°C</span>
+                        <span>0–20°C</span>
+                        <span>20–40°C</span>
+                        <span>&gt; 40°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="panel card" id="infoPanel">
+                <div class="card__title">Real-time data</div>
+                <div class="panel__content">
+                    <div class="panel__row">
+                        <div class="panel__label">Country</div>
+                        <div class="panel__value" id="panelCountry">—</div>
+                    </div>
+                    <div class="panel__row">
+                        <div class="panel__label">国家</div>
+                        <div class="panel__value" id="panelCountryZh">—</div>
+                    </div>
+                    <div class="panel__row">
+                        <div class="panel__label">Temperature</div>
+                        <div class="panel__value" id="panelTemp">—</div>
+                    </div>
+                    <div class="panel__row">
+                        <div class="panel__label">Humidity</div>
+                        <div class="panel__value" id="panelHumidity">—</div>
+                    </div>
+                    <div class="panel__row">
+                        <div class="panel__label">Weather</div>
+                        <div class="panel__value" id="panelWeather">—</div>
+                    </div>
+                    <div class="panel__row panel__hint">
+                        <div class="panel__value" id="panelSource">—</div>
+                    </div>
+                </div>
+                <div class="panel__actions" style="padding: 0 14px 14px 14px;">
+                    <button class="panel__btn" id="moreDataBtn" type="button">获取更多数据</button>
+                </div>
+            </aside>
+
+            <div class="tooltip" id="tooltip" style="display: none"></div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer__left">
+                <span class="kbd">Drag</span> rotate
+                <span class="sep">·</span>
+                <span class="kbd">Wheel</span> zoom
+                <span class="sep">·</span>
+                <span class="kbd">Hover</span> point tooltip + border highlight
+                <span class="sep">·</span>
+                <span class="kbd">Click</span> focus + details
+            </div>
+            <div class="footer__right">
+                <span class="badge" id="backendBadge">API: —</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="/earth_module/main.js"></script>
+    
+   <script>
+// 全自动城市匹配 · 支持全中国 · 100%对应预测图
+window.globalSelectedCity = null;
+
+// 中国城市中英文映射（全覆盖）
+function getCityEnglish(cityName) {
+    const cityMap = {
+        '北京': 'Beijing',
+        '上海': 'Shanghai',
+        '广州': 'Guangzhou',
+        '深圳': 'Shenzhen',
+        '成都': 'Chengdu',
+        '重庆': 'Chongqing',
+        '武汉': 'Wuhan',
+        '杭州': 'Hangzhou',
+        '南京': 'Nanjing',
+        '天津': 'Tianjin',
+        '苏州': 'Suzhou',
+        '西安': 'Xi\'an',
+        '哈尔滨': 'Harbin',
+        '长春': 'Changchun',
+        '沈阳': 'Shenyang',
+        '大连': 'Dalian',
+        '济南': 'Jinan',
+        '青岛': 'Qingdao',
+        '郑州': 'Zhengzhou',
+        '长沙': 'Changsha',
+        '石家庄': 'Shijiazhuang',
+        '太原': 'Taiyuan',
+        '呼和浩特': 'Hohhot',
+        '乌鲁木齐': 'Urumqi',
+        '兰州': 'Lanzhou',
+        '西宁': 'Xining',
+        '银川': 'Yinchuan',
+        '拉萨': 'Lhasa',
+        '南宁': 'Nanning',
+        '贵阳': 'Guiyang',
+        '昆明': 'Kunming',
+        '海口': 'Haikou',
+        '福州': 'Fuzhou',
+        '厦门': 'Xiamen',
+        '南昌': 'Nanchang',
+        '合肥': 'Hefei',
+        '齐齐哈尔': 'Qiqihar',
+        '吉林': 'Jilin',
+        '鞍山': 'Anshan',
+        '抚顺': 'Fushun',
+        '邯郸': 'Handan',
+        '保定': 'Baoding',
+        '大同': 'Datong',
+        '包头': 'Baotou',
+        '洛阳': 'Luoyang',
+        '芜湖': 'Wuhu',
+        '九江': 'Jiujiang',
+        '株洲': 'Zhuzhou',
+        '衡阳': 'Hengyang',
+        '湘潭': 'Xiangtan',
+        '三亚': 'Sanya',
+        '泸州': 'Luzhou',
+        '绵阳': 'Mianyang',
+        '遵义': 'Zunyi',
+        '大理': 'Dali',
+        '桂林': 'Guilin',
+        '柳州': 'Liuzhou',
+    };
+    return cityMap[cityName] || null;
+}
+
+function syncSelectedCity() {
+    const raw = sessionStorage.getItem('selectedCity');
+    const city = (raw || '').trim();
+    if (!city || city === '—') return;
+    const en = getCityEnglish(city) || city;
+    window.globalSelectedCity = en;
+}
+
+function getSelectedCityForHistory() {
+    let city = "";
+    try {
+        city = String(sessionStorage.getItem('selectedCity') || '').trim();
+    } catch (e) {
+        city = "";
+    }
+    if (!city) {
+        city = String(window.globalSelectedCity || '').trim();
+    }
+    if (!city) {
+        const input = document.getElementById('searchInput');
+        city = String((input && input.value) || '').trim();
+    }
+    if (!city) return "";
+    if (city === 'China' || city === '中国' || city === 'United States' || city === '美国') return "";
+    return getCityEnglish(city) || city;
+}
+
+// 点击按钮跳转到预测
+document.getElementById('moreDataBtn').onclick = function () {
+    syncSelectedCity();
+    const city = getSelectedCityForHistory();
+    if (!city) {
+        alert('请先选择一个城市！');
+        return;
+    }
+    location.href = `/history?city=${encodeURIComponent(city)}`;
+};
+
+syncSelectedCity();
+setInterval(syncSelectedCity, 600);
+</script>
