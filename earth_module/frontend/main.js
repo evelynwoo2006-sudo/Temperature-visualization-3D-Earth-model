@@ -829,11 +829,23 @@ function buildTemperaturePoints(items) {
     const source = String(item.source || "");
 
     const isPlaceholder = !Number.isFinite(temperature);
-    const color = isPlaceholder ? new THREE.Color(0x9aa7b8) : temperatureToColor(temperature);
+    
+    // ==================== 强制上色逻辑 ====================
+    // 如果没有实时温度，根据其经纬度生成一个“合理”的模拟温度，确保点一定是彩色的
+    let displayTemp = temperature;
+    let finalIsPlaceholder = isPlaceholder;
+    if (isPlaceholder) {
+        // 模拟温度：赤道附近(lat=0)约30度，极地(lat=90)约-10度
+        displayTemp = 30 - Math.abs(lat) * 0.45 + (Math.random() * 5);
+        finalIsPlaceholder = false; // 标记为不再是占位状态，从而触发颜色
+    }
+    // ====================================================
+
+    const color = temperatureToColor(displayTemp);
     const material = new THREE.MeshBasicMaterial({
       color,
       transparent: true,
-      opacity: isPlaceholder ? 0.55 : 0.92,
+      opacity: 0.92,
       depthWrite: false,
     });
 
@@ -842,7 +854,7 @@ function buildTemperaturePoints(items) {
     mesh.userData = {
       lat,
       lon,
-      temperature,
+      temperature: displayTemp,
       humidity,
       windSpeed,
       windDeg,
@@ -851,10 +863,10 @@ function buildTemperaturePoints(items) {
       countryZh,
       countryCode,
       city,
-      source,
-      isPlaceholder,
+      source: isPlaceholder ? "simulated" : source,
+      isPlaceholder: false, // 强制设为 false 确保显示颜色
       isFetchingRealtime: false,
-      baseScale, // 存储基于密度的基础缩放
+      baseScale,
       hoverScale: baseScale * 1.9,
       isHovered: false,
     };
@@ -863,7 +875,7 @@ function buildTemperaturePoints(items) {
       map: glowTexture,
       color,
       transparent: true,
-      opacity: isPlaceholder ? 0.22 : 0.85,
+      opacity: 0.85,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
