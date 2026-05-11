@@ -77,9 +77,6 @@
                         <div class="panel__value" id="panelSource">—</div>
                     </div>
                 </div>
-                <div class="panel__actions" style="padding: 0 14px 14px 14px;">
-                    <button class="panel__btn" id="moreDataBtn" type="button">查看详细预测</button>
-                </div>
             </aside>
 
             <div class="tooltip" id="tooltip" style="display: none"></div>
@@ -134,17 +131,6 @@ function getSelectedCityForHistory() {
     }
     return city?.trim();
 }
-
-document.getElementById('moreDataBtn').onclick = function () {
-    const city = getSelectedCityForHistory();
-    if (!city) {
-        alert('请先在地球上点击或搜索一个城市！');
-        return;
-    }
-    // 在 GitHub Pages 静态环境下，无法直接访问 Flask 路由
-    // 提示用户这部分需要后端支持，或者跳转到静态生成的预测页（如果后续生成的话）
-    alert('预测详情功能需要后端支持。目前您正在查看的是 GitHub Pages 静态演示版。');
-};
 
 syncSelectedCity();
 setInterval(syncSelectedCity, 1000);
