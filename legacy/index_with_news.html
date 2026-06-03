@@ -1,0 +1,388 @@
+
+&lt;!DOCTYPE html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Global Temperature Monitor - 3D Earth with News&lt;/title&gt;
+    &lt;link rel="stylesheet" href="earth_module/frontend/style.css" /&gt;
+    &lt;style&gt;
+        .user-display {
+            background: rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-left: 12px;
+            font-size: 14px;
+        }
+        .news-panel {
+            position: absolute;
+            bottom: 70px;
+            right: 14px;
+            width: 340px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .news-item {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .news-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .news-item:last-child {
+            border-bottom: none;
+        }
+        .news-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+        .news-meta {
+            font-size: 12px;
+            color: rgba(255,255,255,0.6);
+            display: flex;
+            justify-content: space-between;
+        }
+        .news-category {
+            background: rgba(100, 181, 246, 0.2);
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: #64b5f6;
+        }
+        .news-loading {
+            padding: 20px;
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+        .modal {
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .modal__header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 14px;
+            margin-bottom: 16px;
+        }
+        .modal__title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+            flex: 1;
+            padding-right: 16px;
+        }
+        .modal__close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+        .modal__close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .modal__content {
+            color: rgba(255,255,255,0.85);
+            line-height: 1.8;
+            font-size: 15px;
+        }
+        .modal__content p {
+            margin-bottom: 14px;
+        }
+        .modal__content .news-source {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 13px;
+            color: rgba(255,255,255,0.5);
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div id="app"&gt;
+        &lt;header class="topbar"&gt;
+            &lt;div class="title"&gt;
+                &lt;div class="title__main"&gt;Global Temperature Monitor&lt;/div&gt;
+                &lt;div class="title__sub"&gt;Real-time temperature visualization on a 3D Earth&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class="topbar__right"&gt;
+                &lt;div class="status" id="statusText"&gt;Connecting…&lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/header&gt;
+
+        &lt;main class="stage"&gt;
+            &lt;canvas id="threeCanvas"&gt;&lt;/canvas&gt;
+
+            &lt;div class="searchbar card" id="searchBar"&gt;
+                &lt;input class="searchbar__input" id="searchInput" type="text" placeholder="Search country / city (国家/城市)…" autocomplete="off" spellcheck="false" /&gt;
+                &lt;button class="searchbar__clear" id="searchClear" type="button"&gt;×&lt;/button&gt;
+                &lt;div class="searchbar__results" id="searchResults" style="display: none"&gt;&lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div class="hud"&gt;
+                &lt;div class="legend card"&gt;
+                    &lt;div class="card__title"&gt;Temperature Legend&lt;/div&gt;
+                    &lt;div class="legend__bar" id="legendBar"&gt;&lt;/div&gt;
+                    &lt;div class="legend__labels"&gt;
+                        &lt;span&gt;&amp;lt; 0°C&lt;/span&gt;
+                        &lt;span&gt;0–20°C&lt;/span&gt;
+                        &lt;span&gt;20–40°C&lt;/span&gt;
+                        &lt;span&gt;&amp;gt; 40°C&lt;/span&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;aside class="panel card" id="infoPanel"&gt;
+                &lt;div class="card__title"&gt;Real-time data&lt;/div&gt;
+                &lt;div class="panel__content"&gt;
+                    &lt;div class="panel__row"&gt;
+                        &lt;div class="panel__label"&gt;Country&lt;/div&gt;
+                        &lt;div class="panel__value" id="panelCountry"&gt;—&lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class="panel__row"&gt;
+                        &lt;div class="panel__label"&gt;国家&lt;/div&gt;
+                        &lt;div class="panel__value" id="panelCountryZh"&gt;—&lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class="panel__row"&gt;
+                        &lt;div class="panel__label"&gt;Temperature&lt;/div&gt;
+                        &lt;div class="panel__value" id="panelTemp"&gt;—&lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class="panel__row"&gt;
+                        &lt;div class="panel__label"&gt;Humidity&lt;/div&gt;
+                        &lt;div class="panel__value" id="panelHumidity"&gt;—&lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class="panel__row"&gt;
+                        &lt;div class="panel__label"&gt;Weather&lt;/div&gt;
+                        &lt;div class="panel__value" id="panelWeather"&gt;—&lt;/div&gt;
+                    &lt;/div&gt;
+                    &lt;div class="panel__row panel__hint"&gt;
+                        &lt;div class="panel__value" id="panelSource"&gt;—&lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/aside&gt;
+
+            &lt;aside class="panel card news-panel" id="newsPanel" style="display: none;"&gt;
+                &lt;div class="card__title"&gt;Top News&lt;/div&gt;
+                &lt;div class="panel__content" id="newsContent"&gt;
+                    &lt;div class="news-loading"&gt;Loading news...&lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/aside&gt;
+
+            &lt;div class="modal-overlay" id="newsModal" style="display: none;"&gt;
+                &lt;div class="modal card"&gt;
+                    &lt;div class="modal__header"&gt;
+                        &lt;div class="modal__title" id="modalTitle"&gt;News Title&lt;/div&gt;
+                        &lt;button class="modal__close" id="modalClose"&gt;×&lt;/button&gt;
+                    &lt;/div&gt;
+                    &lt;div class="modal__content" id="modalContent"&gt;
+                        News content goes here...
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div class="tooltip" id="tooltip" style="display: none"&gt;&lt;/div&gt;
+        &lt;/main&gt;
+
+        &lt;footer class="footer"&gt;
+            &lt;div class="footer__left"&gt;
+                &lt;span class="kbd"&gt;Drag&lt;/span&gt; rotate
+                &lt;span class="sep"&gt;·&lt;/span&gt;
+                &lt;span class="kbd"&gt;Wheel&lt;/span&gt; zoom
+                &lt;span class="sep"&gt;·&lt;/span&gt;
+                &lt;span class="kbd"&gt;Hover&lt;/span&gt; point tooltip + border highlight
+                &lt;span class="sep"&gt;·&lt;/span&gt;
+                &lt;span class="kbd"&gt;Click&lt;/span&gt; focus + details
+            &lt;/div&gt;
+            &lt;div class="footer__right"&gt;
+                &lt;span class="badge" id="backendBadge"&gt;API: —&lt;/span&gt;
+            &lt;/div&gt;
+        &lt;/footer&gt;
+    &lt;/div&gt;
+
+    &lt;script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"&gt;&lt;/script&gt;
+    &lt;script src="earth_module/frontend/main.js"&gt;&lt;/script&gt;
+    
+   &lt;script&gt;
+window.globalSelectedCity = null;
+
+function getCityEnglish(cityName) {
+    const cityMap = {
+        '北京': 'Beijing', '上海': 'Shanghai', '广州': 'Guangzhou', '深圳': 'Shenzhen',
+        '成都': 'Chengdu', '重庆': 'Chongqing', '武汉': 'Wuhan', '杭州': 'Hangzhou',
+        '南京': 'Nanjing', '天津': 'Tianjin', '苏州': 'Suzhou', '西安': 'Xi\'an'
+    };
+    return cityMap[cityName] || null;
+}
+
+function syncSelectedCity() {
+    const raw = sessionStorage.getItem('selectedCity');
+    const city = (raw || '').trim();
+    if (!city || city === '—') return;
+    const en = getCityEnglish(city) || city;
+    window.globalSelectedCity = en;
+}
+
+function getSelectedCityForHistory() {
+    let city = sessionStorage.getItem('selectedCity') || window.globalSelectedCity;
+    if (!city) {
+        const input = document.getElementById('searchInput');
+        city = input ? input.value : '';
+    }
+    return city ? city.trim() : '';
+}
+
+syncSelectedCity();
+setInterval(syncSelectedCity, 1000);
+
+const mockNewsData = {
+    CN: [
+        { id: 1, title: "中国宣布将在人工智能领域增加2000亿美元投资", category: "AI科技", time: "2小时前", source: "Global Tech Daily", content: "中国政府今日宣布了一项雄心勃勃的人工智能发展计划，计划在未来五年内向AI领域投入超过2000亿美元。这项投资将主要用于基础研究、人才培养和产业应用。\n\n根据官方声明，中国的目标是在2030年前成为全球人工智能领域的领导者。计划重点关注的领域包括：大语言模型、自动驾驶、医疗AI和智能制造。" },
+        { id: 2, title: "中美贸易谈判取得突破性进展", category: "国际外交", time: "5小时前", source: "Financial Times", content: "中美两国高级贸易代表在华盛顿结束了为期三天的会谈，双方在多个关键领域取得了重要共识。\n\n据接近谈判的消息人士透露，双方就半导体供应链安全、知识产权保护和市场准入等问题达成了原则性协议。" },
+        { id: 3, title: "亚洲股市创三年新高，外资持续流入中国市场", category: "金融要事", time: "8小时前", source: "Bloomberg", content: "受多重利好消息刺激，亚洲主要股指今日创下三年来新高。中国沪深300指数上涨3.2%，香港恒生指数上涨2.8%。" }
+    ],
+    US: [
+        { id: 4, title: "美联储宣布维持利率不变，暗示年内可能降息三次", category: "金融要事", time: "1小时前", source: "CNBC", content: "美国联邦储备委员会今日宣布维持联邦基金利率在5.25%-5.50%区间不变，符合市场广泛预期。\n\n在随后的新闻发布会上，美联储主席鲍威尔表示，如果经济数据继续保持良好态势，年内可能会进行三次降息。" },
+        { id: 5, title: "OpenAI发布GPT-5预览版", category: "AI科技", time: "4小时前", source: "TechCrunch", content: "OpenAI今日在年度开发者大会上发布了GPT-5预览版，展示了令人惊叹的多模态能力。\n\n新模型不仅能够理解和生成文本，还能同时处理图像、音频和视频。" },
+        { id: 6, title: "美欧宣布将建立跨大西洋贸易和技术理事会2.0版", category: "国际外交", time: "7小时前", source: "Reuters", content: "美国和欧盟今日宣布将升级跨大西洋贸易和技术理事会(TTC)，成立2.0版本。" }
+    ],
+    GB: [
+        { id: 7, title: "伦敦金融城推出全球首个绿色金融中心", category: "金融要事", time: "2小时前", source: "Financial Times", content: "伦敦金融城今日正式启动全球绿色金融中心，旨在成为全球可持续金融的领导者。" },
+        { id: 8, title: "英国与11国签署AI治理协议", category: "AI科技", time: "6小时前", source: "BBC", content: "英国在布莱切利园主办的AI安全峰会上，与11个国家签署了关于AI治理的联合声明。" },
+        { id: 9, title: "英欧未来关系谈判重启", category: "国际外交", time: "9小时前", source: "The Guardian", content: "英国和欧盟今日重启未来关系谈判，重点讨论贸易便利化、食品和药品安全标准等问题。" }
+    ]
+};
+
+function getMockNews(countryCode) {
+    const fallbackNews = [
+        { id: 99, title: "全球人工智能治理峰会召开", category: "AI科技", time: "刚刚", source: "Global News Network", content: "来自全球30多个国家的代表在瑞士日内瓦举行了人工智能治理峰会，就AI安全、伦理和监管框架达成重要共识。" },
+        { id: 100, title: "全球清洁能源投资创历史新高", category: "金融要事", time: "30分钟前", source: "Energy Finance Report", content: "国际能源署(IEA)今日发布报告显示，今年一季度全球清洁能源投资达到创纪录的7500亿美元，同比增长45%。" },
+        { id: 101, title: "联合国贸易和发展会议：全球经济增长好于预期", category: "国际外交", time: "1小时前", source: "UNCTAD", content: "联合国贸易和发展会议(UNCTAD)今日发布最新报告，将今年全球经济增长预测上调至3.2%，好于此前预期。" }
+    ];
+    return mockNewsData[countryCode] || fallbackNews;
+}
+
+function renderNews(countryCode) {
+    const newsPanel = document.getElementById('newsPanel');
+    const newsContent = document.getElementById('newsContent');
+    if (!newsPanel || !newsContent) return;
+    newsPanel.style.display = 'block';
+    newsContent.innerHTML = '&lt;div class="news-loading"&gt;Loading news...&lt;/div&gt;';
+    
+    setTimeout(function() {
+        const news = getMockNews(countryCode);
+        let html = '';
+        news.forEach(function(item) {
+            html += '&lt;div class="news-item" data-id="' + item.id + '" data-country="' + countryCode + '"&gt;' +
+                '&lt;div class="news-title"&gt;' + item.title + '&lt;/div&gt;' +
+                '&lt;div class="news-meta"&gt;' +
+                    '&lt;span class="news-category"&gt;' + item.category + '&lt;/span&gt;' +
+                    '&lt;span&gt;' + item.time + '&lt;/span&gt;' +
+                '&lt;/div&gt;' +
+            '&lt;/div&gt;';
+        });
+        newsContent.innerHTML = html;
+        
+        document.querySelectorAll('.news-item').forEach(function(el) {
+            el.addEventListener('click', function() {
+                const id = parseInt(el.dataset.id);
+                const cc = el.dataset.country;
+                const allNews = (mockNewsData[cc] || []).concat(mockNewsData['US'] || []).concat(mockNewsData['CN'] || []).concat(mockNewsData['GB'] || []);
+                const newsItem = allNews.find(function(n) { return n.id === id; });
+                if (newsItem) {
+                    showNewsModal(newsItem);
+                }
+            });
+        });
+    }, 500);
+}
+
+function showNewsModal(newsItem) {
+    const modal = document.getElementById('newsModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalContent = document.getElementById('modalContent');
+    if (!modal || !modalTitle || !modalContent) return;
+    modalTitle.textContent = newsItem.title;
+    modalContent.innerHTML = newsItem.content.split('\n\n').map(function(p) { return '&lt;p&gt;' + p + '&lt;/p&gt;'; }).join('') +
+        '&lt;div class="news-source"&gt;来源: ' + newsItem.source + ' · ' + newsItem.time + '&lt;/div&gt;';
+    modal.style.display = 'flex';
+}
+
+function closeNewsModal() {
+    const modal = document.getElementById('newsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const closeBtn = document.getElementById('modalClose');
+    const modalOverlay = document.getElementById('newsModal');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeNewsModal);
+    }
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target.id === 'newsModal') {
+                closeNewsModal();
+            }
+        });
+    }
+    
+    let lastCountryCode = '';
+    const countryCodeMap = {
+        'China': 'CN', 'United States': 'US', 'United Kingdom': 'GB', 'UK': 'GB',
+        'Germany': 'DE', 'France': 'FR', 'Japan': 'JP', 'Russia': 'RU',
+        'India': 'IN', 'Brazil': 'BR'
+    };
+    
+    setInterval(function() {
+        const panelCountry = document.getElementById('panelCountry');
+        if (panelCountry) {
+            const countryName = panelCountry.textContent.trim();
+            if (countryName &amp;&amp; countryName !== '—') {
+                const countryCode = countryCodeMap[countryName] || countryName.substring(0, 2).toUpperCase();
+                if (countryCode &amp;&amp; countryCode !== lastCountryCode) {
+                    lastCountryCode = countryCode;
+                    renderNews(countryCode);
+                }
+            }
+        }
+    }, 300);
+});
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;

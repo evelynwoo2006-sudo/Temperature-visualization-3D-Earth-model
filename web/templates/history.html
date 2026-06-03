@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ city }} - 未来15天天气预测</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #0a0f1a 0%, #0f172a 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(18, 25, 45, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            border: 1px solid rgba(86, 240, 255, 0.3);
+        }
+        .back-btn {
+            background: rgba(86, 240, 255, 0.2);
+            border: 1px solid #56f0ff;
+            color: #56f0ff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+        .back-btn:hover {
+            background: #56f0ff;
+            color: #0a0f1a;
+        }
+        h1 {
+            color: #56f0ff;
+            font-size: 24px;
+        }
+        .user-badge {
+            background: rgba(255,255,255,0.15);
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: white;
+        }
+        .city-badge {
+            background: linear-gradient(90deg, #1f7bff, #56f0ff);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            margin-left: 15px;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(86, 240, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        .search-box button {
+            padding: 12px 24px;
+            background: linear-gradient(90deg, #1f7bff, #56f0ff);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .chart-container {
+            background: rgba(18, 25, 45, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(86, 240, 255, 0.2);
+        }
+        .chart-title {
+            color: #56f0ff;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .error-box {
+            text-align: center;
+            padding: 50px;
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/earth" class="back-btn">← 返回3D地球</a>
+            <h1>📈 未来15天天气预测</h1>
+            <div style="display: flex; align-items: center;">
+                <div class="user-badge">👤 {{ username }}</div>
+                <div class="city-badge">{{ city }}</div>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="citySearch" placeholder="切换城市查看预测" value="{{ city }}">
+            <button onclick="changeCity()">切换</button>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">📊 温度、降水量、湿度预测（未来15天）</div>
+            <div id="forecastChart">{{ chart_html|safe }}</div>
+        </div>
+    </div>
+
+    <script>
+        function changeCity() {
+            const city = document.getElementById('citySearch').value.trim();
+            if (city) {
+                window.location.href = `/history?city=${encodeURIComponent(city)}`;
+            }
+        }
+        document.getElementById('citySearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') changeCity();
+        });
+    </script>
+
+    <!-- 在 history.html 中 -->
+<div class="search-box">
+    <input type="text" id="citySearch" value="{{ city }}" placeholder="输入城市名（如：北京、Shenzhen）...">
+    <button onclick="switchCity()">切换</button>
+    {% if error_msg %}
+    <span style="color: #f5c35c; margin-left: 10px; font-size: 12px;">⚠️ {{ error_msg }}</span>
+    {% endif %}
+</div>
+
+<script>
+function switchCity() {
+    const city = document.getElementById('citySearch').value.trim();
+    if (city) {
+        // 支持中文和英文，直接传递，后端会处理映射
+        window.location.href = `/history?city=${encodeURIComponent(city)}`;
+    }
+}
+
+// 支持回车键
+document.getElementById('citySearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') switchCity();
+});
+</script>
+</body>
+</html>
