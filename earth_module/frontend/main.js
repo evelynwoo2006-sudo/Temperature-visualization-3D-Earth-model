@@ -17,6 +17,14 @@ const CONFIG = {
   focusDurationMs: 950,
 };
 
+// When running on a static server (not port 5000), redirect API calls to Flask
+(function () {
+  const onLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  if (onLocalhost && String(location.port || "") !== "5000") {
+    CONFIG.apiWeatherUrl = "http://127.0.0.1:5000/api/weather";
+  }
+})();
+
 const LANDING_CAMERA_DISTANCE = 5.0;
 let lastLandingMode = null;
 
@@ -1165,10 +1173,14 @@ function fillPanelFromPoint(mesh) {
 
   ui.panelCountry.textContent = countryEn;
   ui.panelCountryZh.textContent = `${countryZhLabel}`;
-  ui.panelTemp.textContent = "Loading…";
-  ui.panelWeather.textContent = "Loading…";
-  ui.panelHumidity.textContent = "Loading…";
-  ui.panelSource.textContent = "Loading…";
+
+  // Show existing sample/synthetic data immediately for instant feedback,
+  // then fetch real-time data in the background and update when it arrives.
+  const hasTemp = Number.isFinite(ud.temperature);
+  ui.panelTemp.textContent = hasTemp ? formatTemp(ud.temperature) : "Loading…";
+  ui.panelHumidity.textContent = ud.humidity != null ? `${ud.humidity}%` : "Loading…";
+  ui.panelWeather.textContent = ud.weather ? formatWeatherZh(ud.weather) : "Loading…";
+  ui.panelSource.textContent = ud.source ? `Data source: ${ud.source} (updating…)` : "Loading…";
 
   fetchAndFillRealtimeWeather({
     lat: ud.lat,
@@ -1492,10 +1504,13 @@ function fillPanelFromDataItem(item) {
 
   ui.panelCountry.textContent = countryEn;
   ui.panelCountryZh.textContent = `${countryZhLabel}`;
-  ui.panelTemp.textContent = "Loading…";
-  ui.panelWeather.textContent = "Loading…";
-  ui.panelHumidity.textContent = "Loading…";
-  ui.panelSource.textContent = "Loading…";
+
+  // Show sample data immediately, then update with real-time data in the background
+  const hasTemp = Number.isFinite(item.temperature);
+  ui.panelTemp.textContent = hasTemp ? formatTemp(item.temperature) : "Loading…";
+  ui.panelHumidity.textContent = item.humidity != null ? `${item.humidity}%` : "Loading…";
+  ui.panelWeather.textContent = item.weather ? formatWeatherZh(item.weather) : "Loading…";
+  ui.panelSource.textContent = item.source ? `Data source: ${item.source} (updating…)` : "Loading…";
 
   fetchAndFillRealtimeWeather({
     lat: item.lat,

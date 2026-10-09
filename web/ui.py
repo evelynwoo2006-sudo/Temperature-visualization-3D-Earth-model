@@ -1,6 +1,7 @@
 # ui.py - 最终版
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
@@ -1155,6 +1156,11 @@ def index():
     return send_from_directory(PROJECT_ROOT_DIR, "index.html")
 
 
+@app.route('/login.html')
+def login_page():
+    return send_from_directory(PROJECT_ROOT_DIR, "login.html")
+
+
 @app.route("/news.js")
 def news_js():
     return send_from_directory(PROJECT_ROOT_DIR, "news.js")
@@ -1899,7 +1905,6 @@ def api_weather():
     if request.method == "OPTIONS":
         return _corsify(make_response("", 204))
 
-    allow_cache = str(request.args.get("allow_cache") or request.args.get("cache") or "").strip() == "1"
     lat = request.args.get("lat", type=float)
     lon = request.args.get("lon", type=float)
     name = request.args.get("name", default="", type=str)
@@ -1911,22 +1916,31 @@ def api_weather():
     cache_key = f"{lat:.4f},{lon:.4f}"
     cached = _weather_cache["by_coord"].get(cache_key)
     now = time.time()
-    if allow_cache and cached and now < float(cached["expires_at"]):
+    if cached and now < float(cached["expires_at"]):
         return jsonify(cached["data"])
 
     session_req = requests.Session()
-    uvi = fetch_open_meteo_uvi(session_req=session_req, lat=lat, lon=lon)
 
-    if OPENWEATHER_API_KEY:
-        weather = fetch_weather_by_coord(session_req=session_req, lat=lat, lon=lon, api_key=OPENWEATHER_API_KEY)
-        if weather is None:
+    # UVI is not shown in the UI, so only fetch it when explicitly requested
+    want_uvi = str(request.args.get("uvi") or "").strip() == "1"
+
+    # Run weather (and optionally UVI) fetches in parallel to minimize latency
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        weather_future = None
+        if OPENWEATHER_API_KEY:
+            weather_future = ex.submit(fetch_weather_by_coord, session_req=session_req, lat=lat, lon=lon, api_key=OPENWEATHER_API_KEY)
+        else:
+            weather_future = ex.submit(fetch_open_meteo_current, session_req=session_req, lat=lat, lon=lon)
+
+        uvi_future = ex.submit(fetch_open_meteo_uvi, session_req=session_req, lat=lat, lon=lon) if want_uvi else None
+
+        weather = weather_future.result()
+        if OPENWEATHER_API_KEY and weather is None:
             weather = fetch_open_meteo_current(session_req=session_req, lat=lat, lon=lon)
             source = "open-meteo"
         else:
-            source = "openweather"
-    else:
-        weather = fetch_open_meteo_current(session_req=session_req, lat=lat, lon=lon)
-        source = "open-meteo"
+            source = "openweather" if OPENWEATHER_API_KEY else "open-meteo"
+        uvi = uvi_future.result() if uvi_future else None
 
     if weather is None:
         weather = _synthetic_current_weather(lat=lat, lon=lon)
@@ -1945,8 +1959,8 @@ def api_weather():
         "uvi": float(uvi) if uvi is not None else None,
         "source": source,
     }
-    if allow_cache:
-        _weather_cache["by_coord"][cache_key] = {"expires_at": now + CACHE_TTL_SECONDS, "data": payload}
+    # Cache by default (10 min TTL) so repeat clicks on the same point are instant
+    _weather_cache["by_coord"][cache_key] = {"expires_at": now + CACHE_TTL_SECONDS, "data": payload}
     return jsonify(payload)
 
 

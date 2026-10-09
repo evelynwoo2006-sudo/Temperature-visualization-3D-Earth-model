@@ -11,19 +11,115 @@
             background: rgba(255,255,255,0.15);
             padding: 6px 14px;
             border-radius: 20px;
-            margin-left: 12px;
             font-size: 14px;
+        }
+
+        .topbarBtn {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(110, 170, 255, 0.26);
+            background: rgba(0, 0, 0, 0.14);
+            color: rgba(235, 245, 255, 0.92);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .topbarBtn:hover {
+            border-color: rgba(86, 240, 255, 0.40);
+            background: rgba(86, 240, 255, 0.06);
+        }
+
+        .notesModal__toolbar {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(110, 170, 255, 0.10);
+        }
+
+        .notesBtn {
+            padding: 7px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(110, 170, 255, 0.22);
+            background: rgba(0, 0, 0, 0.10);
+            color: rgba(235, 245, 255, 0.88);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .notesBtn:hover {
+            border-color: rgba(86, 240, 255, 0.35);
+            background: rgba(86, 240, 255, 0.06);
+        }
+
+        .notesBtn--primary {
+            border-color: rgba(86, 240, 255, 0.45);
+            background: linear-gradient(90deg, rgba(86, 240, 255, 0.16), rgba(31, 123, 255, 0.20));
+        }
+
+        .notesModal__status {
+            margin-left: auto;
+            font-size: 12px;
+            color: rgba(235, 245, 255, 0.62);
+        }
+
+        .notesModal__editor {
+            min-height: 220px;
+            max-height: 52vh;
+            overflow: auto;
+            margin: 12px 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(110, 170, 255, 0.18);
+            background: rgba(0, 0, 0, 0.16);
+            color: rgba(235, 245, 255, 0.92);
+            font-size: 14px;
+            line-height: 1.7;
+            outline: none;
+            user-select: text;
+            cursor: text;
+        }
+
+        .notesModal__editor:empty::before {
+            content: attr(data-placeholder);
+            color: rgba(235, 245, 255, 0.42);
+        }
+
+        .notesModal__actions {
+            padding: 0 14px 14px 14px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
         }
     </style>
 </head>
 <body class="is-landing">
+    <script>
+        // If the user is already signed in, skip the landing page and enter the main page
+        (function () {
+            try {
+                const raw = localStorage.getItem('tgm_user');
+                if (!raw) return;
+                const user = JSON.parse(raw);
+                if (user && user.username) {
+                    document.body.classList.remove('is-landing');
+                    document.body.classList.add('is-ready');
+                    window.tgmCurrentUser = user.username;
+                }
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
     <div id="app">
         <header class="topbar">
             <div class="title">
                 <div class="title__main">Global Information Monitor</div>
                 <div class="title__sub">Real-time temperature visualization on a 3D Earth</div>
             </div>
-            <div class="topbar__right">
+            <div class="topbar__right" style="display: flex; align-items: center; gap: 12px;">
+                <button class="topbarBtn" id="todoBtn" type="button">To-do List</button>
+                <button class="topbarBtn" id="notesBtn" type="button">News Notes</button>
+                <span class="user-display" id="userDisplay" style="display: none"></span>
                 <div class="status" id="statusText">Connecting…</div>
             </div>
         </header>
@@ -44,7 +140,7 @@
                 <div class="stockPanel__content">
                     <div class="stockQuote" id="stockQuoteSH">
                         <div class="stockQuote__left">
-                            <div class="stockQuote__name" id="stockNameSH">上证指数</div>
+                            <div class="stockQuote__name" id="stockNameSH">SSE Composite</div>
                             <div class="stockQuote__price" id="stockPriceSH">—</div>
                         </div>
                         <div class="stockQuote__spark" id="stockSparkSH" aria-hidden="true"></div>
@@ -55,7 +151,7 @@
                     </div>
                     <div class="stockQuote" id="stockQuoteSZ">
                         <div class="stockQuote__left">
-                            <div class="stockQuote__name" id="stockNameSZ">深证指数</div>
+                            <div class="stockQuote__name" id="stockNameSZ">SZSE Component</div>
                             <div class="stockQuote__price" id="stockPriceSZ">—</div>
                         </div>
                         <div class="stockQuote__spark" id="stockSparkSZ" aria-hidden="true"></div>
@@ -66,7 +162,7 @@
                     </div>
                     <div class="stockQuote" id="stockQuoteZJ">
                         <div class="stockQuote__left">
-                            <div class="stockQuote__name" id="stockNameZJ">紫金矿业</div>
+                            <div class="stockQuote__name" id="stockNameZJ">Zijin Mining</div>
                             <div class="stockQuote__price" id="stockPriceZJ">—</div>
                         </div>
                         <div class="stockQuote__spark" id="stockSparkZJ" aria-hidden="true"></div>
@@ -77,7 +173,7 @@
                     </div>
                     <div class="stockQuote" id="stockQuoteHY">
                         <div class="stockQuote__left">
-                            <div class="stockQuote__name" id="stockNameHY">中远海能</div>
+                            <div class="stockQuote__name" id="stockNameHY">COSCO Shipping Energy</div>
                             <div class="stockQuote__price" id="stockPriceHY">—</div>
                         </div>
                         <div class="stockQuote__spark" id="stockSparkHY" aria-hidden="true"></div>
@@ -88,7 +184,7 @@
                     </div>
                     <div class="stockQuote" id="stockQuoteBF">
                         <div class="stockQuote__left">
-                            <div class="stockQuote__name" id="stockNameBF">北方导航</div>
+                            <div class="stockQuote__name" id="stockNameBF">North Navigation</div>
                             <div class="stockQuote__price" id="stockPriceBF">—</div>
                         </div>
                         <div class="stockQuote__spark" id="stockSparkBF" aria-hidden="true"></div>
@@ -97,17 +193,17 @@
                             <div class="stockQuote__delta" id="stockDeltaBF">—</div>
                         </div>
                     </div>
-                    <div class="stockPanel__hint" id="stockHint">加载中…</div>
+                    <div class="stockPanel__hint" id="stockHint">Loading…</div>
                 </div>
             </aside>
 
             <div class="searchbar card" id="searchBar">
-                <input class="searchbar__input" id="searchInput" type="text" placeholder="Search country / city (国家/城市)…" autocomplete="off" spellcheck="false" />
+                <input class="searchbar__input" id="searchInput" type="text" placeholder="Search country / city…" autocomplete="off" spellcheck="false" />
                 <button class="searchbar__clear" id="searchClear" type="button">×</button>
                 <div class="searchbar__results" id="searchResults" style="display: none"></div>
             </div>
 
-            <button id="aiAssistantBtn" class="ai-assistant-btn" type="button" aria-label="AI对话">
+            <button id="aiAssistantBtn" class="ai-assistant-btn" type="button" aria-label="AI Assistant">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                     <path d="M12 2.5c-3.9 0-7 3.1-7 7v3.2c0 .7-.3 1.4-.8 1.9l-.7.7c-.3.3-.2.8.2 1l1.3.6c.4.2.7.6.7 1.1V20c0 .8.7 1.5 1.5 1.5H9.5c.6 0 1.1-.4 1.3-1l.2-.6h2l.2.6c.2.6.7 1 1.3 1h2.3c.8 0 1.5-.7 1.5-1.5v-1.4c0-.5.3-.9.7-1.1l1.3-.6c.4-.2.5-.7.2-1l-.7-.7c-.5-.5-.8-1.2-.8-1.9V9.5c0-3.9-3.1-7-7-7Z" stroke="currentColor" stroke-width="1.4" />
                     <path d="M9.2 11.2h.1M14.7 11.2h.1" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -115,15 +211,15 @@
                 </svg>
             </button>
 
-            <div id="aiChat" class="ai-chat" role="dialog" aria-label="AI对话框">
+            <div id="aiChat" class="ai-chat" role="dialog" aria-label="AI Chat">
                 <div class="ai-chat__header">
                     <div class="ai-chat__title">AI Assistant</div>
                     <button id="aiChatClose" class="ai-chat__close" type="button">×</button>
                 </div>
                 <div id="aiChatMessages" class="ai-chat__messages"></div>
                 <div class="ai-chat__composer">
-                    <input id="aiChatInput" class="ai-chat__input" placeholder="例如：分析今日时政对A股影响并推荐股票 / 我想去东京旅游，未来6天适合吗？" />
-                    <button id="aiChatSend" class="ai-chat__send" type="button">发送</button>
+                    <input id="aiChatInput" class="ai-chat__input" placeholder="e.g. Analyze today's news impact on A-shares / I want to travel to Tokyo, is the next 6 days suitable?" />
+                    <button id="aiChatSend" class="ai-chat__send" type="button">Send</button>
                 </div>
             </div>
 
@@ -148,7 +244,7 @@
                         <div class="panel__value" id="panelCountry">—</div>
                     </div>
                     <div class="panel__row">
-                        <div class="panel__label">国家</div>
+                        <div class="panel__label">Country (zh)</div>
                         <div class="panel__value" id="panelCountryZh">—</div>
                     </div>
                     <div class="panel__row">
@@ -173,7 +269,7 @@
                 <div class="card__title">Today's News</div>
                 <div class="panel__content">
                     <div class="panel__row panel__hint">
-                        <div class="panel__value" id="newsHint">点击任意国家的数据点加载新闻</div>
+                        <div class="panel__value" id="newsHint">Click any country's data point to load news</div>
                     </div>
                     <div class="newsList" id="newsList"></div>
                 </div>
@@ -186,6 +282,25 @@
                         <button class="newsModal__close" id="newsModalClose" type="button">×</button>
                     </div>
                     <div class="newsModal__content" id="newsModalContent"></div>
+                </div>
+            </div>
+
+            <div class="newsModalOverlay" id="notesOverlay" style="display: none">
+                <div class="card newsModal notesModal">
+                    <div class="newsModal__header">
+                        <div class="newsModal__title" id="notesTitle">Notes</div>
+                        <button class="newsModal__close" id="notesClose" type="button">×</button>
+                    </div>
+                    <div class="notesModal__toolbar">
+                        <button class="notesBtn" id="notesHighlight" type="button">Highlight</button>
+                        <button class="notesBtn" id="notesUnhighlight" type="button">Remove highlight</button>
+                        <span class="notesModal__status" id="notesStatus"></span>
+                    </div>
+                    <div class="notesModal__editor" id="notesEditor" contenteditable="true" spellcheck="false"
+                        data-placeholder="Select text and click Highlight, then press Save…"></div>
+                    <div class="notesModal__actions">
+                        <button class="notesBtn notesBtn--primary" id="notesSave" type="button">Save</button>
+                    </div>
                 </div>
             </div>
 
@@ -276,7 +391,7 @@ setInterval(syncSelectedCity, 1000);
 
         const roleEl = document.createElement('div');
         roleEl.className = 'ai-msg__role';
-        roleEl.textContent = role === 'user' ? '你' : 'AI';
+        roleEl.textContent = role === 'user' ? 'You' : 'AI';
 
         const bubble = document.createElement('div');
         bubble.className = 'ai-msg__bubble';
@@ -335,7 +450,7 @@ setInterval(syncSelectedCity, 1000);
         loadingRole.textContent = 'AI';
         const loadingBubble = document.createElement('div');
         loadingBubble.className = 'ai-msg__bubble';
-        loadingBubble.textContent = '正在思考…';
+        loadingBubble.textContent = 'Thinking…';
         loadingNode.appendChild(loadingRole);
         loadingNode.appendChild(loadingBubble);
         list.appendChild(loadingNode);
@@ -356,7 +471,7 @@ setInterval(syncSelectedCity, 1000);
                 throw new Error('HTTP ' + res.status);
             }
             const payload = await res.json();
-            const reply = String(payload.reply || '（无回复）');
+            const reply = String(payload.reply || '(no reply)');
             const images = payload.images || [];
             list.removeChild(loadingNode);
             addMessage('assistant', reply, images);
@@ -364,10 +479,10 @@ setInterval(syncSelectedCity, 1000);
             list.removeChild(loadingNode);
             const msg = String(e || '');
             if (msg.includes('HTTP 501')) {
-                addMessage('assistant', '你当前是用静态方式运行（例如 python -m http.server），静态服务器不支持 POST，所以会返回 501。\n\n请改用 Flask 运行并访问：http://127.0.0.1:5000/\n运行命令：python web/main.py');
+                addMessage('assistant', 'You are currently running in static mode (e.g. python -m http.server). The static server does not support POST requests, so it returns 501.\n\nPlease run with Flask instead: http://127.0.0.1:5000/\nRun: python web/main.py');
                 return;
             }
-            addMessage('assistant', 'AI 服务未启动或网络不可用。请用 Flask 方式运行项目后再试：http://127.0.0.1:5000/\n运行命令：python web/main.py\n错误：' + msg);
+            addMessage('assistant', 'AI service is not running or the network is unavailable. Please run the project with Flask: http://127.0.0.1:5000/\nRun: python web/main.py\nError: ' + msg);
         }
     }
 
@@ -379,33 +494,35 @@ setInterval(syncSelectedCity, 1000);
         }
     });
 
-    addMessage('assistant', '你好！我可以做两类事情：\n1) 基于全球新闻与时政，分析对A股的影响并只推荐上证/深证等中国上市股票；\n2) 基于目的地未来气温，给出出行建议并展示著名景点图片。');
+    addMessage('assistant', 'Hello! I can help with two things:\n1) Based on global news and current affairs, analyze the impact on A-shares and only recommend Chinese-listed stocks (SSE/SZSE, etc.);\n2) Based on the destination\'s future temperatures, give travel advice and show images of famous attractions.');
 })();
 </script>
     <script src="news.js"></script>
     <script>
         (function () {
+            // Show the signed-in username in the top bar
+            const userEl = document.getElementById('userDisplay');
+            if (userEl) {
+                let username = window.tgmCurrentUser;
+                if (!username) {
+                    try {
+                        const raw = localStorage.getItem('tgm_user');
+                        const user = raw ? JSON.parse(raw) : null;
+                        if (user && user.username) username = user.username;
+                    } catch (e) { /* ignore */ }
+                }
+                if (username) {
+                    userEl.textContent = '👤 ' + username;
+                    userEl.style.display = '';
+                }
+            }
+
+            // Clicking GO: go to the sign in / sign up page first
             const btn = document.getElementById('landingGo');
             if (!btn) return;
             btn.addEventListener('click', () => {
                 if (!document.body.classList.contains('is-landing')) return;
-                document.body.classList.remove('is-landing');
-                document.body.classList.add('is-ready');
-                const canvas = document.getElementById('threeCanvas');
-                let done = false;
-                const trigger = () => {
-                    if (done) return;
-                    done = true;
-                    window.dispatchEvent(new Event('resize'));
-                };
-                if (canvas) {
-                    canvas.addEventListener('transitionend', (e) => {
-                        if (e && e.propertyName === 'left') trigger();
-                    }, { once: true });
-                    setTimeout(trigger, 1200);
-                } else {
-                    trigger();
-                }
+                location.href = 'login.html';
             });
         })();
     </script>
@@ -413,11 +530,11 @@ setInterval(syncSelectedCity, 1000);
         (function () {
             const hintEl = document.getElementById('stockHint');
             const QUOTES = [
-                { prefix: 'SH', symbol: 'sh000001', defaultName: '上证指数', basePrice: 3150.25 },
-                { prefix: 'SZ', symbol: 'sz399001', defaultName: '深证指数', basePrice: 10420.80 },
-                { prefix: 'ZJ', symbol: 'sh601899', defaultName: '紫金矿业', basePrice: 15.68 },
-                { prefix: 'HY', symbol: 'sh600026', defaultName: '中远海能', basePrice: 8.42 },
-                { prefix: 'BF', symbol: 'sh600435', defaultName: '北方导航', basePrice: 12.35 },
+                { prefix: 'SH', symbol: 'sh000001', defaultName: 'SSE Composite', basePrice: 3150.25 },
+                { prefix: 'SZ', symbol: 'sz399001', defaultName: 'SZSE Component', basePrice: 10420.80 },
+                { prefix: 'ZJ', symbol: 'sh601899', defaultName: 'Zijin Mining', basePrice: 15.68 },
+                { prefix: 'HY', symbol: 'sh600026', defaultName: 'COSCO Shipping Energy', basePrice: 8.42 },
+                { prefix: 'BF', symbol: 'sh600435', defaultName: 'North Navigation', basePrice: 12.35 },
             ]
                 .map((q) => {
                     const nameEl = document.getElementById(`stockName${q.prefix}`);
@@ -549,7 +666,7 @@ setInterval(syncSelectedCity, 1000);
             }
 
             async function refresh() {
-                if (hintEl) hintEl.textContent = '加载中…';
+                if (hintEl) hintEl.textContent = 'Loading…';
                 const onLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
                 const apiBase = onLocalhost && String(location.port || '') !== '5000' ? 'http://127.0.0.1:5000' : '';
                 const results = await Promise.all(QUOTES.map((q) => refreshOne(q, apiBase)));
@@ -558,14 +675,111 @@ setInterval(syncSelectedCity, 1000);
                 if (okCount === QUOTES.length) {
                     hintEl.textContent = '';
                 } else if (okCount > 0) {
-                    hintEl.textContent = '部分指数数据暂不可用（已显示模拟数据）';
+                    hintEl.textContent = 'Some index data is temporarily unavailable (showing simulated data)';
                 } else {
-                    hintEl.textContent = '演示模式（模拟数据）';
+                    hintEl.textContent = 'Demo mode (simulated data)';
                 }
             }
 
             refresh();
             setInterval(refresh, 12000);
+        })();
+    </script>
+    <script>
+        // To-do List / News Notes panels with highlight + save
+        (function () {
+            const STORAGE_PREFIX = 'tgm_notes_';
+            const HIGHLIGHT_COLOR = 'rgba(255, 224, 102, 0.32)';
+            // Old solid highlight (converted to translucent when loading saved notes)
+            const LEGACY_HIGHLIGHT = /#ffe066|rgb\(\s*255\s*,\s*224\s*,\s*102\s*\)/gi;
+
+            const overlay = document.getElementById('notesOverlay');
+            const titleEl = document.getElementById('notesTitle');
+            const editor = document.getElementById('notesEditor');
+            const statusEl = document.getElementById('notesStatus');
+            const closeBtn = document.getElementById('notesClose');
+            const saveBtn = document.getElementById('notesSave');
+            const highlightBtn = document.getElementById('notesHighlight');
+            const unhighlightBtn = document.getElementById('notesUnhighlight');
+            const todoBtn = document.getElementById('todoBtn');
+            const notesBtn = document.getElementById('notesBtn');
+            if (!overlay || !editor) return;
+
+            let currentType = 'todo';
+
+            function currentUser() {
+                if (window.tgmCurrentUser) return String(window.tgmCurrentUser);
+                try {
+                    const raw = localStorage.getItem('tgm_user');
+                    const user = raw ? JSON.parse(raw) : null;
+                    if (user && user.username) return String(user.username);
+                } catch (e) { /* ignore */ }
+                return 'guest';
+            }
+
+            function storageKey(type) {
+                return STORAGE_PREFIX + currentUser() + '_' + type;
+            }
+
+            function setStatus(text, isOk) {
+                statusEl.textContent = text || '';
+                statusEl.style.color = isOk ? 'var(--cyan)' : 'rgba(235, 245, 255, 0.62)';
+            }
+
+            function openPanel(type) {
+                currentType = type;
+                titleEl.textContent = type === 'todo' ? 'To-do List' : 'News Notes';
+                let saved = '';
+                try { saved = localStorage.getItem(storageKey(type)) || ''; } catch (e) { /* ignore */ }
+                editor.innerHTML = saved.replace(LEGACY_HIGHLIGHT, HIGHLIGHT_COLOR);
+                setStatus('');
+                overlay.style.display = 'flex';
+                editor.focus();
+            }
+
+            function closePanel() {
+                overlay.style.display = 'none';
+            }
+
+            function save() {
+                try { localStorage.setItem(storageKey(currentType), editor.innerHTML); } catch (e) { /* ignore */ }
+                setStatus('Saved', true);
+                setTimeout(() => setStatus(''), 1600);
+            }
+
+            function applyHighlight(color) {
+                editor.focus();
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand('hiliteColor', false, color);
+            }
+
+            if (todoBtn) todoBtn.addEventListener('click', () => openPanel('todo'));
+            if (notesBtn) notesBtn.addEventListener('click', () => openPanel('notes'));
+            if (closeBtn) closeBtn.addEventListener('click', closePanel);
+            if (saveBtn) saveBtn.addEventListener('click', save);
+
+            // Keep the text selection inside the editor when clicking the highlight buttons
+            [highlightBtn, unhighlightBtn].forEach((btn) => {
+                if (!btn) return;
+                btn.addEventListener('mousedown', (e) => e.preventDefault());
+            });
+            if (highlightBtn) highlightBtn.addEventListener('click', () => applyHighlight(HIGHLIGHT_COLOR));
+            if (unhighlightBtn) unhighlightBtn.addEventListener('click', () => applyHighlight('transparent'));
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closePanel();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && overlay.style.display === 'flex') closePanel();
+            });
+
+            editor.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                    e.preventDefault();
+                    save();
+                }
+            });
         })();
     </script>
 </body>

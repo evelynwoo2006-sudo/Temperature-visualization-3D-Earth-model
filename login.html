@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in / Sign up · Global Information Monitor</title>
+    <link rel="stylesheet" href="earth_module/frontend/style.css" />
+    <style>
+        body {
+            overflow: auto;
+        }
+
+        .authPage {
+            min-height: 100%;
+            display: grid;
+            place-items: center;
+            padding: 32px 18px;
+        }
+
+        .authCard {
+            width: min(440px, 100%);
+            padding: 28px 26px 24px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--panel-strong);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+        }
+
+        .authCard__brand {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+        }
+
+        .authCard__sub {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .authTabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin: 22px 0 18px;
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(0, 0, 0, 0.18);
+        }
+
+        .authTabs__btn {
+            padding: 9px 10px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--muted);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .authTabs__btn.is-active {
+            color: var(--text);
+            background: rgba(86, 240, 255, 0.10);
+            box-shadow: inset 0 0 0 1px rgba(86, 240, 255, 0.28);
+        }
+
+        .authField {
+            display: grid;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .authField__label {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .authField__input {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: rgba(0, 0, 0, 0.22);
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+        }
+
+        .authField__input:focus {
+            border-color: rgba(86, 240, 255, 0.45);
+        }
+
+        .authSubmit {
+            width: 100%;
+            margin-top: 6px;
+            padding: 12px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(110, 170, 255, 0.30);
+            background: linear-gradient(90deg, rgba(86, 240, 255, 0.18), rgba(31, 123, 255, 0.22));
+            color: var(--text);
+            font-size: 15px;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+        }
+
+        .authSubmit:hover {
+            border-color: rgba(86, 240, 255, 0.55);
+        }
+
+        .authMsg {
+            min-height: 18px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .authMsg.is-error {
+            color: var(--red);
+        }
+
+        .authMsg.is-ok {
+            color: var(--cyan);
+        }
+
+        .authBack {
+            display: inline-block;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--muted);
+            text-decoration: none;
+        }
+
+        .authBack:hover {
+            color: var(--text);
+        }
+
+        .authPanel[hidden] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <main class="authPage">
+        <section class="authCard">
+            <div class="authCard__brand">Global Information Monitor</div>
+            <div class="authCard__sub">Sign in or sign up to enter the 3D Earth main page</div>
+
+            <div class="authTabs" role="tablist">
+                <button class="authTabs__btn" id="tabRegister" type="button" role="tab">Sign up</button>
+                <button class="authTabs__btn" id="tabLogin" type="button" role="tab">Sign in</button>
+            </div>
+
+            <!-- Sign up -->
+            <form class="authPanel" id="panelRegister" autocomplete="off">
+                <div class="authField">
+                    <label class="authField__label" for="regUsername">Username</label>
+                    <input class="authField__input" id="regUsername" type="text" placeholder="Enter your username" />
+                </div>
+                <div class="authField">
+                    <label class="authField__label" for="regEmail">Email</label>
+                    <input class="authField__input" id="regEmail" type="email" placeholder="example@mail.com" />
+                </div>
+                <div class="authField">
+                    <label class="authField__label" for="regPassword">Password</label>
+                    <input class="authField__input" id="regPassword" type="password" placeholder="At least 6 characters" />
+                </div>
+                <button class="authSubmit" type="submit">Sign up &amp; Enter</button>
+                <div class="authMsg" id="regMsg"></div>
+            </form>
+
+            <!-- Sign in -->
+            <form class="authPanel" id="panelLogin" autocomplete="off" hidden>
+                <div class="authField">
+                    <label class="authField__label" for="loginAccount">Username or Email</label>
+                    <input class="authField__input" id="loginAccount" type="text" placeholder="Enter your username or email" />
+                </div>
+                <div class="authField">
+                    <label class="authField__label" for="loginPassword">Password</label>
+                    <input class="authField__input" id="loginPassword" type="password" placeholder="Enter your password" />
+                </div>
+                <button class="authSubmit" type="submit">Sign in &amp; Enter</button>
+                <div class="authMsg" id="loginMsg"></div>
+            </form>
+
+            <a class="authBack" href="./">Back to home</a>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            var USERS_KEY = 'tgm_users';
+            var CURRENT_KEY = 'tgm_user';
+
+            var tabRegister = document.getElementById('tabRegister');
+            var tabLogin = document.getElementById('tabLogin');
+            var panelRegister = document.getElementById('panelRegister');
+            var panelLogin = document.getElementById('panelLogin');
+            var regMsg = document.getElementById('regMsg');
+            var loginMsg = document.getElementById('loginMsg');
+
+            function loadUsers() {
+                try {
+                    var raw = localStorage.getItem(USERS_KEY);
+                    var arr = raw ? JSON.parse(raw) : [];
+                    return Array.isArray(arr) ? arr : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function saveUsers(users) {
+                localStorage.setItem(USERS_KEY, JSON.stringify(users));
+            }
+
+            function setMsg(el, text, type) {
+                el.textContent = text || '';
+                el.classList.remove('is-error', 'is-ok');
+                if (type === 'error') el.classList.add('is-error');
+                if (type === 'ok') el.classList.add('is-ok');
+            }
+
+            function goHome() {
+                location.href = './';
+            }
+
+            function switchTab(mode) {
+                var isRegister = mode === 'register';
+                tabRegister.classList.toggle('is-active', isRegister);
+                tabLogin.classList.toggle('is-active', !isRegister);
+                panelRegister.hidden = !isRegister;
+                panelLogin.hidden = isRegister;
+            }
+
+            tabRegister.addEventListener('click', function () { switchTab('register'); });
+            tabLogin.addEventListener('click', function () { switchTab('login'); });
+
+            panelRegister.addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                var username = document.getElementById('regUsername').value.trim();
+                var email = document.getElementById('regEmail').value.trim();
+                var password = document.getElementById('regPassword').value;
+
+                if (!username) { setMsg(regMsg, 'Please enter a username', 'error'); return; }
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setMsg(regMsg, 'Please enter a valid email address', 'error'); return; }
+                if (password.length < 6) { setMsg(regMsg, 'Password must be at least 6 characters', 'error'); return; }
+
+                var users = loadUsers();
+                var exists = users.some(function (u) {
+                    return u.email.toLowerCase() === email.toLowerCase() || u.username === username;
+                });
+                if (exists) { setMsg(regMsg, 'This username or email is already registered. Please sign in.', 'error'); return; }
+
+                var user = { username: username, email: email, password: password };
+                users.push(user);
+                saveUsers(users);
+                localStorage.setItem(CURRENT_KEY, JSON.stringify({ username: username, email: email }));
+
+                setMsg(regMsg, 'Sign up successful. Entering the main page…', 'ok');
+                setTimeout(goHome, 700);
+            });
+
+            panelLogin.addEventListener('submit', function (ev) {
+                ev.preventDefault();
+                var account = document.getElementById('loginAccount').value.trim();
+                var password = document.getElementById('loginPassword').value;
+                if (!account) { setMsg(loginMsg, 'Please enter your username or email', 'error'); return; }
+
+                var users = loadUsers();
+                var matched = users.filter(function (u) {
+                    return u.username === account || u.email.toLowerCase() === account.toLowerCase();
+                })[0];
+
+                if (!matched) { setMsg(loginMsg, 'Account not found. Please sign up first.', 'error'); return; }
+                if (matched.password !== password) { setMsg(loginMsg, 'Incorrect password', 'error'); return; }
+
+                localStorage.setItem(CURRENT_KEY, JSON.stringify({ username: matched.username, email: matched.email }));
+                setMsg(loginMsg, 'Sign in successful. Entering the main page…', 'ok');
+                setTimeout(goHome, 700);
+            });
+
+            switchTab('register');
+        })();
+    </script>
+</body>
+</html>
