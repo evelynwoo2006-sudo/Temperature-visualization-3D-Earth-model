@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Temperature Monitor - 3D Earth</title>
+    <!-- 修正路径为相对路径以适配 GitHub Pages -->
+    <link rel="stylesheet" href="earth_module/frontend/style.css" />
+    <style>
+        .user-display {
+            background: rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            margin-left: 12px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body class="is-landing">
+    <div id="app">
+        <header class="topbar">
+            <div class="title">
+                <div class="title__main">Global Information Monitor</div>
+                <div class="title__sub">Real-time temperature visualization on a 3D Earth</div>
+            </div>
+            <div class="topbar__right">
+                <div class="status" id="statusText">Connecting…</div>
+            </div>
+        </header>
+
+        <main class="stage">
+            <canvas id="threeCanvas"></canvas>
+
+            <section class="landingHero" id="landingHero" aria-label="Intro">
+                <div class="landingHero__content">
+                    <div class="landingHero__line landingHero__line--primary">At Beginning of the day</div>
+                    <div class="landingHero__line landingHero__line--gradient">Let's start here</div>
+                    <button id="landingGo" class="landingHero__go" type="button">GO →</button>
+                </div>
+            </section>
+
+            <aside class="card stockPanel" id="stockPanel" aria-label="Stock panel">
+                <div class="card__title">Stock Trend</div>
+                <div class="stockPanel__content">
+                    <div class="stockQuote" id="stockQuoteSH">
+                        <div class="stockQuote__left">
+                            <div class="stockQuote__name" id="stockNameSH">上证指数</div>
+                            <div class="stockQuote__price" id="stockPriceSH">—</div>
+                        </div>
+                        <div class="stockQuote__spark" id="stockSparkSH" aria-hidden="true"></div>
+                        <div class="stockQuote__right">
+                            <div class="stockQuote__badge" id="stockBadgeSH">—</div>
+                            <div class="stockQuote__delta" id="stockDeltaSH">—</div>
+                        </div>
+                    </div>
+                    <div class="stockQuote" id="stockQuoteSZ">
+                        <div class="stockQuote__left">
+                            <div class="stockQuote__name" id="stockNameSZ">深证指数</div>
+                            <div class="stockQuote__price" id="stockPriceSZ">—</div>
+                        </div>
+                        <div class="stockQuote__spark" id="stockSparkSZ" aria-hidden="true"></div>
+                        <div class="stockQuote__right">
+                            <div class="stockQuote__badge" id="stockBadgeSZ">—</div>
+                            <div class="stockQuote__delta" id="stockDeltaSZ">—</div>
+                        </div>
+                    </div>
+                    <div class="stockQuote" id="stockQuoteZJ">
+                        <div class="stockQuote__left">
+                            <div class="stockQuote__name" id="stockNameZJ">紫金矿业</div>
+                            <div class="stockQuote__price" id="stockPriceZJ">—</div>
+                        </div>
+                        <div class="stockQuote__spark" id="stockSparkZJ" aria-hidden="true"></div>
+                        <div class="stockQuote__right">
+                            <div class="stockQuote__badge" id="stockBadgeZJ">—</div>
+                            <div class="stockQuote__delta" id="stockDeltaZJ">—</div>
+                        </div>
+                    </div>
+                    <div class="stockQuote" id="stockQuoteHY">
+                        <div class="stockQuote__left">
+                            <div class="stockQuote__name" id="stockNameHY">中远海能</div>
+                            <div class="stockQuote__price" id="stockPriceHY">—</div>
+                        </div>
+                        <div class="stockQuote__spark" id="stockSparkHY" aria-hidden="true"></div>
+                        <div class="stockQuote__right">
+                            <div class="stockQuote__badge" id="stockBadgeHY">—</div>
+                            <div class="stockQuote__delta" id="stockDeltaHY">—</div>
+                        </div>
+                    </div>
+                    <div class="stockQuote" id="stockQuoteBF">
+                        <div class="stockQuote__left">
+                            <div class="stockQuote__name" id="stockNameBF">北方导航</div>
+                            <div class="stockQuote__price" id="stockPriceBF">—</div>
+                        </div>
+                        <div class="stockQuote__spark" id="stockSparkBF" aria-hidden="true"></div>
+                        <div class="stockQuote__right">
+                            <div class="stockQuote__badge" id="stockBadgeBF">—</div>
+                            <div class="stockQuote__delta" id="stockDeltaBF">—</div>
+                        </div>
+                    </div>
+                    <div class="stockPanel__hint" id="stockHint">加载中…</div>
+                </div>
+            </aside>
+
+            <div class="searchbar card" id="searchBar">
+                <input class="searchbar__input" id="searchInput" type="text" placeholder="Search country / city (国家/城市)…" autocomplete="off" spellcheck="false" />
+                <button class="searchbar__clear" id="searchClear" type="button">×</button>
+                <div class="searchbar__results" id="searchResults" style="display: none"></div>
+            </div>
+
+            <button id="aiAssistantBtn" class="ai-assistant-btn" type="button" aria-label="AI对话">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2.5c-3.9 0-7 3.1-7 7v3.2c0 .7-.3 1.4-.8 1.9l-.7.7c-.3.3-.2.8.2 1l1.3.6c.4.2.7.6.7 1.1V20c0 .8.7 1.5 1.5 1.5H9.5c.6 0 1.1-.4 1.3-1l.2-.6h2l.2.6c.2.6.7 1 1.3 1h2.3c.8 0 1.5-.7 1.5-1.5v-1.4c0-.5.3-.9.7-1.1l1.3-.6c.4-.2.5-.7.2-1l-.7-.7c-.5-.5-.8-1.2-.8-1.9V9.5c0-3.9-3.1-7-7-7Z" stroke="currentColor" stroke-width="1.4" />
+                    <path d="M9.2 11.2h.1M14.7 11.2h.1" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    <path d="M9 14.5c1 .9 2.2 1.4 3.5 1.4s2.5-.5 3.5-1.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                </svg>
+            </button>
+
+            <div id="aiChat" class="ai-chat" role="dialog" aria-label="AI对话框">
+                <div class="ai-chat__header">
+                    <div class="ai-chat__title">AI Assistant</div>
+                    <button id="aiChatClose" class="ai-chat__close" type="button">×</button>
+                </div>
+                <div id="aiChatMessages" class="ai-chat__messages"></div>
+                <div class="ai-chat__composer">
+                    <input id="aiChatInput" class="ai-chat__input" placeholder="例如：分析今日时政对A股影响并推荐股票 / 我想去东京旅游，未来6天适合吗？" />
+                    <button id="aiChatSend" class="ai-chat__send" type="button">发送</button>
+                </div>
+            </div>
+
+            <div class="hud">
+                <div class="legend card">
+                    <div class="card__title">Temperature Legend</div>
+                    <div class="legend__bar" id="legendBar"></div>
+                    <div class="legend__labels">
+                        <span>&lt; 0°C</span>
+                        <span>0–20°C</span>
+                        <span>20–40°C</span>
+                        <span>&gt; 40°C</span>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="panel card" id="infoPanel">
+                <div class="card__title">Real-time data</div>
+                <div class="panel__content">
+                    <div class="panel__row">
+                        <div class="panel__label">Country</div>
+                        <div class="panel__value" id="panelCountry">—</div>
+                    </div>
+                    <div class="panel__row">
+                        <div class="panel__label">国家</div>
+                        <div class="panel__value" id="panelCountryZh">—</div>
+                    </div>
+                    <div class="panel__row">
+                        <div class="panel__label">Temperature</div>
+                        <div class="panel__value" id="panelTemp">—</div>
+                    </div>
+                    <div class="panel__row">
+                        <div class="panel__label">Humidity</div>
+                        <div class="panel__value" id="panelHumidity">—</div>
+                    </div>
+                    <div class="panel__row">
+                        <div class="panel__label">Weather</div>
+                        <div class="panel__value" id="panelWeather">—</div>
+                    </div>
+                    <div class="panel__row panel__hint">
+                        <div class="panel__value" id="panelSource">—</div>
+                    </div>
+                </div>
+            </aside>
+
+            <aside class="panel card panel--news" id="newsPanel" style="display: none">
+                <div class="card__title">Today's News</div>
+                <div class="panel__content">
+                    <div class="panel__row panel__hint">
+                        <div class="panel__value" id="newsHint">点击任意国家的数据点加载新闻</div>
+                    </div>
+                    <div class="newsList" id="newsList"></div>
+                </div>
+            </aside>
+
+            <div class="newsModalOverlay" id="newsModal" style="display: none">
+                <div class="card newsModal">
+                    <div class="newsModal__header">
+                        <div class="newsModal__title" id="newsModalTitle"></div>
+                        <button class="newsModal__close" id="newsModalClose" type="button">×</button>
+                    </div>
+                    <div class="newsModal__content" id="newsModalContent"></div>
+                </div>
+            </div>
+
+            <div class="tooltip" id="tooltip" style="display: none"></div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer__left">
+                <span class="kbd">Drag</span> rotate
+                <span class="sep">·</span>
+                <span class="kbd">Wheel</span> zoom
+                <span class="sep">·</span>
+                <span class="kbd">Hover</span> point tooltip + border highlight
+                <span class="sep">·</span>
+                <span class="kbd">Click</span> focus + details
+            </div>
+            <div class="footer__right">
+                <span class="badge" id="backendBadge">API: —</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 外部库 -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <!-- 核心逻辑，路径修正 -->
+    <script src="earth_module/frontend/main.js"></script>
+    
+   <script>
+window.globalSelectedCity = null;
+
+function getCityEnglish(cityName) {
+    const cityMap = {
+        '北京': 'Beijing', '上海': 'Shanghai', '广州': 'Guangzhou', '深圳': 'Shenzhen',
+        '成都': 'Chengdu', '重庆': 'Chongqing', '武汉': 'Wuhan', '杭州': 'Hangzhou',
+        '南京': 'Nanjing', '天津': 'Tianjin', '苏州': 'Suzhou', '西安': 'Xi\'an'
+    };
+    return cityMap[cityName] || null;
+}
+
+function syncSelectedCity() {
+    const raw = sessionStorage.getItem('selectedCity');
+    const city = (raw || '').trim();
+    if (!city || city === '—') return;
+    const en = getCityEnglish(city) || city;
+    window.globalSelectedCity = en;
+}
+
+function getSelectedCityForHistory() {
+    let city = sessionStorage.getItem('selectedCity') || window.globalSelectedCity;
+    if (!city) {
+        const input = document.getElementById('searchInput');
+        city = input?.value;
+    }
+    return city?.trim();
+}
+
+syncSelectedCity();
+setInterval(syncSelectedCity, 1000);
+
+(function () {
+    const btn = document.getElementById('aiAssistantBtn');
+    const chat = document.getElementById('aiChat');
+    const closeBtn = document.getElementById('aiChatClose');
+    const list = document.getElementById('aiChatMessages');
+    const input = document.getElementById('aiChatInput');
+    const sendBtn = document.getElementById('aiChatSend');
+    if (!btn || !chat || !list || !input || !sendBtn) return;
+    const history = [];
+
+    function setOpen(open) {
+        chat.style.display = open ? 'block' : 'none';
+    }
+
+    btn.addEventListener('click', () => {
+        const isOpen = (chat.style.display || '').toLowerCase() !== 'none' && chat.style.display !== '';
+        setOpen(!isOpen);
+    });
+
+    closeBtn && closeBtn.addEventListener('click', () => setOpen(false));
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') setOpen(false);
+    });
+
+    function addMessage(role, text, images) {
+        const wrap = document.createElement('div');
+        wrap.className = 'ai-msg' + (role === 'user' ? ' ai-msg--user' : '');
+
+        const roleEl = document.createElement('div');
+        roleEl.className = 'ai-msg__role';
+        roleEl.textContent = role === 'user' ? '你' : 'AI';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'ai-msg__bubble';
+        bubble.textContent = String(text || '');
+
+        wrap.appendChild(roleEl);
+        wrap.appendChild(bubble);
+
+        if (Array.isArray(images) && images.length) {
+            const grid = document.createElement('div');
+            grid.className = 'ai-chat__images';
+            images.slice(0, 4).forEach((img) => {
+                const card = document.createElement('a');
+                card.className = 'ai-chat__imgCard';
+                card.href = String(img.page || img.url || '#');
+                card.target = '_blank';
+                card.rel = 'noreferrer';
+
+                const image = document.createElement('img');
+                image.className = 'ai-chat__img';
+                image.src = String(img.url || '');
+                image.alt = String(img.title || '');
+
+                const title = document.createElement('div');
+                title.className = 'ai-chat__imgTitle';
+                title.textContent = String(img.title || '');
+
+                card.appendChild(image);
+                card.appendChild(title);
+                grid.appendChild(card);
+            });
+            wrap.appendChild(grid);
+        }
+
+        list.appendChild(wrap);
+        list.scrollTop = list.scrollHeight;
+
+        const content = String(text || '').trim();
+        if (content) {
+            history.push({ role: role === 'user' ? 'user' : 'assistant', content });
+            if (history.length > 24) history.splice(0, history.length - 24);
+        }
+    }
+
+    async function send() {
+        const text = String(input.value || '').trim();
+        if (!text) return;
+        input.value = '';
+        setOpen(true);
+        const historySnapshot = history.slice(-12);
+        addMessage('user', text);
+        const loadingNode = document.createElement('div');
+        loadingNode.className = 'ai-msg';
+        const loadingRole = document.createElement('div');
+        loadingRole.className = 'ai-msg__role';
+        loadingRole.textContent = 'AI';
+        const loadingBubble = document.createElement('div');
+        loadingBubble.className = 'ai-msg__bubble';
+        loadingBubble.textContent = '正在思考…';
+        loadingNode.appendChild(loadingRole);
+        loadingNode.appendChild(loadingBubble);
+        list.appendChild(loadingNode);
+        list.scrollTop = list.scrollHeight;
+
+        try {
+            const onLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            const agentUrl = onLocalhost && String(location.port || '') !== '5000'
+                ? 'http://127.0.0.1:5000/agent/chat'
+                : '/agent/chat';
+            const res = await fetch(agentUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, history: historySnapshot })
+            });
+            if (!res.ok) {
+                if (res.status === 501) throw new Error('HTTP 501');
+                throw new Error('HTTP ' + res.status);
+            }
+            const payload = await res.json();
+            const reply = String(payload.reply || '（无回复）');
+            const images = payload.images || [];
+            list.removeChild(loadingNode);
+            addMessage('assistant', reply, images);
+        } catch (e) {
+            list.removeChild(loadingNode);
+            const msg = String(e || '');
+            if (msg.includes('HTTP 501')) {
+                addMessage('assistant', '你当前是用静态方式运行（例如 python -m http.server），静态服务器不支持 POST，所以会返回 501。\n\n请改用 Flask 运行并访问：http://127.0.0.1:5000/\n运行命令：python web/main.py');
+                return;
+            }
+            addMessage('assistant', 'AI 服务未启动或网络不可用。请用 Flask 方式运行项目后再试：http://127.0.0.1:5000/\n运行命令：python web/main.py\n错误：' + msg);
+        }
+    }
+
+    sendBtn.addEventListener('click', send);
+    input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') {
+            ev.preventDefault();
+            send();
+        }
+    });
+
+    addMessage('assistant', '你好！我可以做两类事情：\n1) 基于全球新闻与时政，分析对A股的影响并只推荐上证/深证等中国上市股票；\n2) 基于目的地未来气温，给出出行建议并展示著名景点图片。');
+})();
+</script>
+    <script src="news.js"></script>
+    <script>
+        (function () {
+            const btn = document.getElementById('landingGo');
+            if (!btn) return;
+            btn.addEventListener('click', () => {
+                if (!document.body.classList.contains('is-landing')) return;
+                document.body.classList.remove('is-landing');
+                document.body.classList.add('is-ready');
+                const canvas = document.getElementById('threeCanvas');
+                let done = false;
+                const trigger = () => {
+                    if (done) return;
+                    done = true;
+                    window.dispatchEvent(new Event('resize'));
+                };
+                if (canvas) {
+                    canvas.addEventListener('transitionend', (e) => {
+                        if (e && e.propertyName === 'left') trigger();
+                    }, { once: true });
+                    setTimeout(trigger, 1200);
+                } else {
+                    trigger();
+                }
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            const hintEl = document.getElementById('stockHint');
+            const QUOTES = [
+                { prefix: 'SH', symbol: 'sh000001', defaultName: '上证指数', basePrice: 3150.25 },
+                { prefix: 'SZ', symbol: 'sz399001', defaultName: '深证指数', basePrice: 10420.80 },
+                { prefix: 'ZJ', symbol: 'sh601899', defaultName: '紫金矿业', basePrice: 15.68 },
+                { prefix: 'HY', symbol: 'sh600026', defaultName: '中远海能', basePrice: 8.42 },
+                { prefix: 'BF', symbol: 'sh600435', defaultName: '北方导航', basePrice: 12.35 },
+            ]
+                .map((q) => {
+                    const nameEl = document.getElementById(`stockName${q.prefix}`);
+                    const priceEl = document.getElementById(`stockPrice${q.prefix}`);
+                    const badgeEl = document.getElementById(`stockBadge${q.prefix}`);
+                    const deltaEl = document.getElementById(`stockDelta${q.prefix}`);
+                    const sparkEl = document.getElementById(`stockSpark${q.prefix}`);
+                    if (!nameEl || !priceEl || !badgeEl || !deltaEl || !sparkEl) return null;
+                    return { ...q, nameEl, priceEl, badgeEl, deltaEl, sparkEl };
+                })
+                .filter(Boolean);
+
+            if (!QUOTES.length) return;
+
+            function fmtNumber(n, digits) {
+                const v = Number(n);
+                if (!Number.isFinite(v)) return '—';
+                const d = Number.isFinite(Number(digits)) ? Number(digits) : 2;
+                return v.toFixed(d);
+            }
+
+            function setTrendClass(quote, isUp) {
+                quote.badgeEl.classList.toggle('is-up', isUp);
+                quote.badgeEl.classList.toggle('is-down', !isUp);
+                quote.sparkEl.classList.toggle('is-up', isUp);
+                quote.sparkEl.classList.toggle('is-down', !isUp);
+            }
+
+            function drawSparkline(quote, points) {
+                const arr = Array.isArray(points) ? points.filter((x) => Number.isFinite(Number(x))).map((x) => Number(x)) : [];
+                if (arr.length < 2) {
+                    quote.sparkEl.innerHTML = '';
+                    return;
+                }
+                const w = 120;
+                const h = 38;
+                const pad = 2;
+                let min = Math.min.apply(null, arr);
+                let max = Math.max.apply(null, arr);
+                if (!Number.isFinite(min) || !Number.isFinite(max)) return;
+                if (max - min < 0.000001) {
+                    max = min + 1;
+                }
+                const sx = (w - pad * 2) / (arr.length - 1);
+                const sy = (h - pad * 2) / (max - min);
+                const pts = arr.map((v, i) => {
+                    const x = pad + i * sx;
+                    const y = h - pad - (v - min) * sy;
+                    return [x, y];
+                });
+                const line = pts.map((p, i) => (i === 0 ? `M ${p[0].toFixed(2)} ${p[1].toFixed(2)}` : `L ${p[0].toFixed(2)} ${p[1].toFixed(2)}`)).join(' ');
+                const area = `${line} L ${(pad + (arr.length - 1) * sx).toFixed(2)} ${(h - pad).toFixed(2)} L ${pad.toFixed(2)} ${(h - pad).toFixed(2)} Z`;
+                quote.sparkEl.innerHTML =
+                    `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="none">` +
+                    `<path class="stockSpark__area" d="${area}"></path>` +
+                    `<path class="stockSpark__line" d="${line}"></path>` +
+                    `</svg>`;
+            }
+
+            async function fetchJson(url) {
+                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            }
+
+            function generateMockData(quote) {
+                const seed = quote.basePrice;
+                const random = (seed) => {
+                    const x = Math.sin(seed) * 10000;
+                    return x - Math.floor(x);
+                };
+                
+                let currentPrice = quote.basePrice;
+                const points = [];
+                const baseTime = Date.now();
+                
+                for (let i = 0; i < 20; i++) {
+                    const r = random(baseTime + i * 1000 + quote.basePrice);
+                    const change = (r - 0.5) * (quote.basePrice * 0.02);
+                    currentPrice += change;
+                    points.push(currentPrice);
+                }
+                
+                const lastPrice = points[points.length - 1];
+                const change = lastPrice - quote.basePrice;
+                const pct = (change / quote.basePrice) * 100;
+                
+                return {
+                    name: quote.defaultName,
+                    price: lastPrice,
+                    change: change,
+                    pct: pct,
+                    points: points
+                };
+            }
+
+            async function refreshOne(quote, apiBase) {
+                try {
+                    const data = await fetchJson(`${apiBase}/api/stock?symbol=${encodeURIComponent(quote.symbol)}`);
+                    const name = String(data.name || quote.defaultName);
+                    const price = Number(data.price);
+                    const change = Number(data.change);
+                    const pct = Number(data.pct);
+                    const points = data.points || [];
+
+                    quote.nameEl.textContent = name;
+                    quote.priceEl.textContent = fmtNumber(price, 2);
+                    const isUp = Number.isFinite(pct) ? pct >= 0 : Number.isFinite(change) ? change >= 0 : true;
+                    setTrendClass(quote, isUp);
+                    const pctText = Number.isFinite(pct) ? `${pct >= 0 ? '+' : ''}${fmtNumber(pct, 2)}%` : '—';
+                    quote.badgeEl.textContent = pctText;
+                    const deltaText = Number.isFinite(change) ? `${change >= 0 ? '+' : ''}${fmtNumber(change, 2)}` : '—';
+                    quote.deltaEl.textContent = deltaText;
+                    drawSparkline(quote, points);
+                    return true;
+                } catch (e) {
+                    const mockData = generateMockData(quote);
+                    quote.nameEl.textContent = mockData.name;
+                    quote.priceEl.textContent = fmtNumber(mockData.price, 2);
+                    const isUp = mockData.pct >= 0;
+                    setTrendClass(quote, isUp);
+                    const pctText = `${mockData.pct >= 0 ? '+' : ''}${fmtNumber(mockData.pct, 2)}%`;
+                    quote.badgeEl.textContent = pctText;
+                    const deltaText = `${mockData.change >= 0 ? '+' : ''}${fmtNumber(mockData.change, 2)}`;
+                    quote.deltaEl.textContent = deltaText;
+                    drawSparkline(quote, mockData.points);
+                    return false;
+                }
+            }
+
+            async function refresh() {
+                if (hintEl) hintEl.textContent = '加载中…';
+                const onLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                const apiBase = onLocalhost && String(location.port || '') !== '5000' ? 'http://127.0.0.1:5000' : '';
+                const results = await Promise.all(QUOTES.map((q) => refreshOne(q, apiBase)));
+                if (!hintEl) return;
+                const okCount = results.filter(Boolean).length;
+                if (okCount === QUOTES.length) {
+                    hintEl.textContent = '';
+                } else if (okCount > 0) {
+                    hintEl.textContent = '部分指数数据暂不可用（已显示模拟数据）';
+                } else {
+                    hintEl.textContent = '演示模式（模拟数据）';
+                }
+            }
+
+            refresh();
+            setInterval(refresh, 12000);
+        })();
+    </script>
+</body>
+</html>
