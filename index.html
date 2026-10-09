@@ -96,15 +96,15 @@
 </head>
 <body class="is-landing">
     <script>
-        // If the user is already signed in, skip the landing page and enter the main page
+        // Always show the landing (GO) page first.
+        // Sign-in state is only remembered: clicking GO enters the app directly
+        // if already signed in, otherwise it goes to the sign-in page.
         (function () {
             try {
                 const raw = localStorage.getItem('tgm_user');
                 if (!raw) return;
                 const user = JSON.parse(raw);
                 if (user && user.username) {
-                    document.body.classList.remove('is-landing');
-                    document.body.classList.add('is-ready');
                     window.tgmCurrentUser = user.username;
                 }
             } catch (e) { /* ignore */ }
@@ -517,12 +517,24 @@ setInterval(syncSelectedCity, 1000);
                 }
             }
 
-            // Clicking GO: go to the sign in / sign up page first
+            // Clicking GO: enter the app directly if already signed in,
+            // otherwise go to the sign in / sign up page first
             const btn = document.getElementById('landingGo');
             if (!btn) return;
             btn.addEventListener('click', () => {
                 if (!document.body.classList.contains('is-landing')) return;
-                location.href = 'login.html';
+                let signedIn = null;
+                try {
+                    const raw = localStorage.getItem('tgm_user');
+                    const user = raw ? JSON.parse(raw) : null;
+                    signedIn = user && user.username ? user.username : null;
+                } catch (e) { /* ignore */ }
+                if (signedIn) {
+                    document.body.classList.remove('is-landing');
+                    document.body.classList.add('is-ready');
+                } else {
+                    location.href = 'login.html';
+                }
             });
         })();
     </script>
