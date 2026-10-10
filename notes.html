@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Notes · Global Information Monitor</title>
+    <link rel="stylesheet" href="earth_module/frontend/style.css" />
+    <style>
+        body {
+            overflow: auto;
+        }
+
+        .notesPage {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notesPage__topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(10, 18, 35, 0.55), rgba(10, 18, 35, 0.28));
+            backdrop-filter: blur(10px);
+        }
+
+        .notesPage__main {
+            flex: 1;
+            display: grid;
+            place-items: start center;
+            padding: 32px 18px;
+        }
+
+        .notesCard {
+            width: min(880px, 100%);
+            padding: 24px 26px 22px;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: var(--panel-strong);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+        }
+
+        .notesCard__title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+        }
+
+        .notesCard__sub {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .topbarBtn {
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(110, 170, 255, 0.26);
+            background: rgba(0, 0, 0, 0.14);
+            color: rgba(235, 245, 255, 0.92);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .topbarBtn:hover {
+            border-color: rgba(86, 240, 255, 0.40);
+            background: rgba(86, 240, 255, 0.06);
+        }
+
+        .user-display {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .notesToolbar {
+            margin-top: 20px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            border-radius: 12px;
+            border: 1px solid rgba(110, 170, 255, 0.10);
+            background: rgba(0, 0, 0, 0.10);
+        }
+
+        .notesBtn {
+            padding: 7px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(110, 170, 255, 0.22);
+            background: rgba(0, 0, 0, 0.10);
+            color: rgba(235, 245, 255, 0.88);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .notesBtn:hover {
+            border-color: rgba(86, 240, 255, 0.35);
+            background: rgba(86, 240, 255, 0.06);
+        }
+
+        .notesBtn--primary {
+            border-color: rgba(86, 240, 255, 0.45);
+            background: linear-gradient(90deg, rgba(86, 240, 255, 0.16), rgba(31, 123, 255, 0.20));
+        }
+
+        .notesStatus {
+            margin-left: auto;
+            font-size: 12px;
+            color: rgba(235, 245, 255, 0.62);
+        }
+
+        .notesEditor {
+            min-height: 46vh;
+            max-height: 60vh;
+            overflow: auto;
+            margin-top: 14px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(110, 170, 255, 0.18);
+            background: rgba(0, 0, 0, 0.16);
+            color: rgba(235, 245, 255, 0.92);
+            font-size: 14px;
+            line-height: 1.7;
+            outline: none;
+            user-select: text;
+            cursor: text;
+        }
+
+        .notesEditor:empty::before {
+            content: attr(data-placeholder);
+            color: rgba(235, 245, 255, 0.42);
+        }
+
+        .notesEditor img {
+            max-width: 100%;
+            max-height: 420px;
+            border-radius: 10px;
+            border: 1px solid rgba(110, 170, 255, 0.18);
+            display: block;
+            margin: 8px 0;
+        }
+
+        .notesActions {
+            margin-top: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .notesFootnote {
+            margin-top: 12px;
+            font-size: 11px;
+            color: rgba(235, 245, 255, 0.42);
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="notesPage">
+        <header class="notesPage__topbar">
+            <div class="title">
+                <div class="title__main">Global Information Monitor</div>
+                <div class="title__sub">News Notes</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span class="user-display" id="userDisplay" style="display: none"></span>
+                <button class="topbarBtn" id="backBtn" type="button">← Back</button>
+            </div>
+        </header>
+
+        <main class="notesPage__main">
+            <section class="notesCard">
+                <div class="notesCard__title">News Notes</div>
+                <div class="notesCard__sub">Write notes and attach images. Everything is saved locally for your account.</div>
+
+                <div class="notesToolbar">
+                    <button class="notesBtn" id="highlightBtn" type="button">Highlight</button>
+                    <button class="notesBtn" id="unhighlightBtn" type="button">Remove highlight</button>
+                    <button class="notesBtn" id="imageBtn" type="button">Insert image</button>
+                    <input type="file" id="imageInput" accept="image/*" multiple style="display: none" />
+                    <span class="notesStatus" id="notesStatus"></span>
+                </div>
+
+                <div class="notesEditor" id="notesEditor" contenteditable="true" spellcheck="false"
+                    data-placeholder="Write your notes here… Use Insert image to attach pictures, then press Save."></div>
+
+                <div class="notesActions">
+                    <button class="notesBtn notesBtn--primary" id="saveBtn" type="button">Save</button>
+                </div>
+                <div class="notesFootnote">Notes are stored in this browser only (localStorage), per signed-in account.</div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            const HIGHLIGHT_COLOR = 'rgba(255, 224, 102, 0.32)';
+            const LEGACY_HIGHLIGHT = /#ffe066|rgb\(\s*255\s*,\s*224\s*,\s*102\s*\)/gi;
+            const STORAGE_PREFIX = 'tgm_notes_';
+            const MAX_IMAGE_DIM = 1280;
+            const JPEG_QUALITY = 0.85;
+
+            const editor = document.getElementById('notesEditor');
+            const statusEl = document.getElementById('notesStatus');
+            const saveBtn = document.getElementById('saveBtn');
+            const highlightBtn = document.getElementById('highlightBtn');
+            const unhighlightBtn = document.getElementById('unhighlightBtn');
+            const imageBtn = document.getElementById('imageBtn');
+            const imageInput = document.getElementById('imageInput');
+            const backBtn = document.getElementById('backBtn');
+            const userEl = document.getElementById('userDisplay');
+            if (!editor) return;
+
+            function currentUser() {
+                try {
+                    const raw = localStorage.getItem('tgm_user');
+                    const user = raw ? JSON.parse(raw) : null;
+                    if (user && user.username) return String(user.username);
+                } catch (e) { /* ignore */ }
+                return 'guest';
+            }
+
+            function storageKey() {
+                return STORAGE_PREFIX + currentUser() + '_notes';
+            }
+
+            function setStatus(text, isOk) {
+                statusEl.textContent = text || '';
+                statusEl.style.color = isOk ? 'var(--cyan)' : (isOk === false ? 'var(--red)' : 'rgba(235, 245, 255, 0.62)');
+            }
+
+            // Load saved notes (same storage key the previous modal used, so old notes carry over)
+            let saved = '';
+            try { saved = localStorage.getItem(storageKey()) || ''; } catch (e) { /* ignore */ }
+            editor.innerHTML = saved.replace(LEGACY_HIGHLIGHT, HIGHLIGHT_COLOR);
+
+            function save() {
+                try {
+                    localStorage.setItem(storageKey(), editor.innerHTML);
+                    setStatus('Saved', true);
+                    setTimeout(() => setStatus(''), 1600);
+                } catch (e) {
+                    setStatus('Storage is full — remove some images and save again', false);
+                }
+            }
+
+            function applyHighlight(color) {
+                editor.focus();
+                document.execCommand('styleWithCSS', false, true);
+                document.execCommand('hiliteColor', false, color);
+            }
+
+            // Keep the text selection alive when clicking toolbar buttons
+            [highlightBtn, unhighlightBtn].forEach((btn) => {
+                if (!btn) return;
+                btn.addEventListener('mousedown', (e) => e.preventDefault());
+            });
+
+            // --- Image insertion with compression (keeps localStorage small) ---
+            function compressImage(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onerror = () => reject(new Error('read failed'));
+                    reader.onload = () => {
+                        const img = new Image();
+                        img.onerror = () => reject(new Error('decode failed'));
+                        img.onload = () => {
+                            let { width, height } = img;
+                            const scale = Math.min(1, MAX_IMAGE_DIM / Math.max(width, height));
+                            width = Math.max(1, Math.round(width * scale));
+                            height = Math.max(1, Math.round(height * scale));
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                            resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+                        };
+                        img.src = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            function insertImageAtCursor(dataURL) {
+                editor.focus();
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount && editor.contains(sel.anchorNode)) {
+                    const range = sel.getRangeAt(0);
+                    range.deleteContents();
+                    const img = document.createElement('img');
+                    img.src = dataURL;
+                    range.insertNode(img);
+                    range.setStartAfter(img);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } else {
+                    // No selection inside the editor: append at the end
+                    editor.insertAdjacentHTML('beforeend', '<img src="' + dataURL + '" alt="note image">');
+                }
+            }
+
+            imageBtn.addEventListener('click', () => imageInput.click());
+            imageInput.addEventListener('change', async () => {
+                const files = Array.from(imageInput.files || []);
+                imageInput.value = '';
+                if (!files.length) return;
+                setStatus('Processing image…');
+                let done = 0;
+                for (const file of files) {
+                    try {
+                        const dataURL = await compressImage(file);
+                        insertImageAtCursor(dataURL);
+                        done++;
+                    } catch (e) { /* skip unreadable file */ }
+                }
+                if (done > 0) {
+                    setStatus(done + ' image' + (done > 1 ? 's' : '') + ' inserted — remember to Save', true);
+                    setTimeout(() => setStatus(''), 2200);
+                } else {
+                    setStatus('Could not read the selected file(s)', false);
+                }
+            });
+
+            // Drag & drop images straight into the editor
+            editor.addEventListener('dragover', (e) => e.preventDefault());
+            editor.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []).filter((f) => f.type.startsWith('image/'));
+                if (!files.length) return;
+                setStatus('Processing image…');
+                let done = 0;
+                for (const file of files) {
+                    try {
+                        insertImageAtCursor(await compressImage(file));
+                        done++;
+                    } catch (err) { /* skip */ }
+                }
+                if (done > 0) {
+                    setStatus(done + ' image' + (done > 1 ? 's' : '') + ' inserted — remember to Save', true);
+                    setTimeout(() => setStatus(''), 2200);
+                }
+            });
+
+            saveBtn.addEventListener('click', save);
+            highlightBtn.addEventListener('click', () => applyHighlight(HIGHLIGHT_COLOR));
+            unhighlightBtn.addEventListener('click', () => applyHighlight('transparent'));
+            backBtn.addEventListener('click', () => { location.href = './'; });
+
+            // Show the signed-in username, same style as the main page top bar
+            const username = currentUser();
+            if (username !== 'guest' && userEl) {
+                userEl.textContent = '👤 ' + username;
+                userEl.style.display = '';
+            }
+
+            editor.focus();
+        })();
+    </script>
+</body>
+</html>

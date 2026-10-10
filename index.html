@@ -837,7 +837,8 @@ setInterval(syncSelectedCity, 1000);
             }
 
             if (todoBtn) todoBtn.addEventListener('click', () => openPanel('todo'));
-            if (notesBtn) notesBtn.addEventListener('click', () => openPanel('notes'));
+            // News Notes moved to its own full page (notes.html) with image upload support
+            if (notesBtn) notesBtn.addEventListener('click', () => { location.href = 'notes.html'; });
             if (closeBtn) closeBtn.addEventListener('click', closePanel);
             if (saveBtn) saveBtn.addEventListener('click', save);
 
