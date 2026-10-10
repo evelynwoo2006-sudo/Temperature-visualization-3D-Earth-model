@@ -12,6 +12,50 @@
             padding: 6px 14px;
             border-radius: 20px;
             font-size: 14px;
+            cursor: pointer;
+            color: inherit;
+            border: 0;
+            font-family: inherit;
+        }
+
+        .userMenu {
+            position: relative;
+        }
+
+        .userMenu__dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 150px;
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(110, 170, 255, 0.26);
+            background: rgba(10, 25, 48, 0.92);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+            display: none;
+            z-index: 60;
+        }
+
+        .userMenu.is-open .userMenu__dropdown {
+            display: block;
+        }
+
+        .userMenu__logout {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 0;
+            background: transparent;
+            color: rgba(235, 245, 255, 0.92);
+            font-size: 13px;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .userMenu__logout:hover {
+            background: rgba(86, 240, 255, 0.10);
         }
 
         .topbarBtn {
@@ -119,7 +163,12 @@
             <div class="topbar__right" style="display: flex; align-items: center; gap: 12px;">
                 <button class="topbarBtn" id="todoBtn" type="button">To-do List</button>
                 <button class="topbarBtn" id="notesBtn" type="button">News Notes</button>
-                <span class="user-display" id="userDisplay" style="display: none"></span>
+                <div class="userMenu" id="userMenu" style="display: none">
+                    <button class="user-display" id="userDisplay" type="button" title="Account"></button>
+                    <div class="userMenu__dropdown" id="userMenuDropdown">
+                        <button class="userMenu__logout" id="logoutBtn" type="button">Log out</button>
+                    </div>
+                </div>
                 <div class="status" id="statusText">Connecting…</div>
             </div>
         </header>
@@ -500,9 +549,10 @@ setInterval(syncSelectedCity, 1000);
     <script src="news.js"></script>
     <script>
         (function () {
-            // Show the signed-in username in the top bar
+            // Show the signed-in username in the top bar (click to open Log out menu)
+            const userMenuEl = document.getElementById('userMenu');
             const userEl = document.getElementById('userDisplay');
-            if (userEl) {
+            if (userMenuEl && userEl) {
                 let username = window.tgmCurrentUser;
                 if (!username) {
                     try {
@@ -513,7 +563,28 @@ setInterval(syncSelectedCity, 1000);
                 }
                 if (username) {
                     userEl.textContent = '👤 ' + username;
-                    userEl.style.display = '';
+                    userMenuEl.style.display = '';
+                }
+            }
+
+            // Click the username chip: toggle the Log out dropdown
+            if (userMenuEl && userEl) {
+                userEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    userMenuEl.classList.toggle('is-open');
+                });
+                document.addEventListener('click', (e) => {
+                    if (userMenuEl.classList.contains('is-open') && !userMenuEl.contains(e.target)) {
+                        userMenuEl.classList.remove('is-open');
+                    }
+                });
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', () => {
+                        try { localStorage.removeItem('tgm_user'); } catch (e) { /* ignore */ }
+                        // Back to the landing (GO) page: reload shows the landing hero
+                        location.reload();
+                    });
                 }
             }
 
