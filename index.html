@@ -505,7 +505,10 @@ setInterval(syncSelectedCity, 1000);
         list.appendChild(loadingNode);
         list.scrollTop = list.scrollHeight;
 
-        try {
+        const removeLoading = () => { if (loadingNode.parentNode) list.removeChild(loadingNode); };
+
+        // ---- Backend (Flask) chat: full agent with stock/travel enhancements ----
+        async function callBackendChat() {
             const onLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
             const agentUrl = onLocalhost && String(location.port || '') !== '5000'
                 ? 'http://127.0.0.1:5000/agent/chat'
@@ -515,23 +518,131 @@ setInterval(syncSelectedCity, 1000);
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: text, history: historySnapshot })
             });
-            if (!res.ok) {
-                if (res.status === 501) throw new Error('HTTP 501');
-                throw new Error('HTTP ' + res.status);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return await res.json();
+        }
+
+        // ---- Static hosting fallback: call DeepSeek API directly from the browser ----
+        const KEY_STORE = 'tgm_deepseek_key';
+        const MODEL_STORE = 'tgm_deepseek_model';
+        const STATIC_SYSTEM_PROMPT = '你是 Global Information Monitor（3D 地球温度可视化网站）内置的 AI 助手。'
+            + '你可以：1) 聊天问答、分析时政新闻对 A 股的可能影响（提醒：静态模式下你无法获取实时行情，分析仅供参考，必须附带"不构成投资建议"的免责声明，且只讨论中国境内上市股票）；'
+            + '2) 提供旅行建议（静态模式下你无法获取实时天气预报，请基于常识给出建议并提醒用户查看实时天气）。'
+            + '请用与用户相同的语言回答，保持简洁友好。';
+
+        function getStoredKey() {
+            try { return (localStorage.getItem(KEY_STORE) || '').trim(); } catch (e) { return ''; }
+        }
+
+        async function callDeepSeekDirect() {
+            const key = getStoredKey();
+            if (!key) {
+                const err = new Error('NO_KEY');
+                err.noKey = true;
+                throw err;
             }
-            const payload = await res.json();
+            let model = 'deepseek-chat';
+            try { model = (localStorage.getItem(MODEL_STORE) || 'deepseek-chat').trim() || 'deepseek-chat'; } catch (e) { /* ignore */ }
+            const res = await fetch('https://api.deepseek.com/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+                body: JSON.stringify({
+                    model: model,
+                    messages: [
+                        { role: 'system', content: STATIC_SYSTEM_PROMPT },
+                        ...historySnapshot,
+                        { role: 'user', content: text }
+                    ],
+                    temperature: 0.7
+                })
+            });
+            if (!res.ok) throw new Error('DeepSeek HTTP ' + res.status + (res.status === 401 ? ' (API key invalid)' : ''));
+            const data = await res.json();
+            const reply = String((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '(no reply)');
+            return { reply: reply, images: [] };
+        }
+
+        // Render an inline API key setup form inside the chat
+        function renderKeySetup(reasonText) {
+            const wrap = document.createElement('div');
+            wrap.className = 'ai-msg';
+            const roleEl = document.createElement('div');
+            roleEl.className = 'ai-msg__role';
+            roleEl.textContent = 'AI';
+            const bubble = document.createElement('div');
+            bubble.className = 'ai-msg__bubble';
+            bubble.style.maxWidth = 'none';
+
+            const tip = document.createElement('div');
+            tip.textContent = reasonText + ' To chat on this static site, the browser calls the DeepSeek API directly. Please paste your DeepSeek API key (stored only in your browser, never uploaded):';
+            tip.style.whiteSpace = 'pre-wrap';
+            tip.style.marginBottom = '8px';
+            bubble.appendChild(tip);
+
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '6px';
+            const keyInput = document.createElement('input');
+            keyInput.type = 'password';
+            keyInput.placeholder = 'sk-...';
+            keyInput.style.flex = '1';
+            keyInput.style.padding = '7px 10px';
+            keyInput.style.borderRadius = '10px';
+            keyInput.style.border = '1px solid rgba(110, 170, 255, 0.26)';
+            keyInput.style.background = 'rgba(0, 0, 0, 0.16)';
+            keyInput.style.color = 'inherit';
+            keyInput.style.fontSize = '13px';
+            keyInput.style.outline = 'none';
+            const saveK = document.createElement('button');
+            saveK.textContent = 'Save';
+            saveK.style.padding = '7px 14px';
+            saveK.style.borderRadius = '10px';
+            saveK.style.border = '1px solid rgba(86, 240, 255, 0.45)';
+            saveK.style.background = 'linear-gradient(90deg, rgba(86, 240, 255, 0.16), rgba(31, 123, 255, 0.20))';
+            saveK.style.color = 'inherit';
+            saveK.style.cursor = 'pointer';
+            saveK.style.fontSize = '13px';
+            row.appendChild(keyInput);
+            row.appendChild(saveK);
+            bubble.appendChild(row);
+            wrap.appendChild(roleEl);
+            wrap.appendChild(bubble);
+            list.appendChild(wrap);
+            list.scrollTop = list.scrollHeight;
+
+            saveK.addEventListener('click', () => {
+                const v = String(keyInput.value || '').trim();
+                if (!v) return;
+                try { localStorage.setItem(KEY_STORE, v); } catch (e) { /* ignore */ }
+                bubble.textContent = 'DeepSeek API key saved in this browser ✓ Now send your message again.';
+                list.scrollTop = list.scrollHeight;
+            });
+        }
+
+        try {
+            let payload;
+            try {
+                payload = await callBackendChat();
+            } catch (backendErr) {
+                // Static hosting (e.g. GitHub Pages) cannot serve POST /agent/chat (405/501/404) — fall back to direct DeepSeek
+                payload = await callDeepSeekDirect();
+            }
             const reply = String(payload.reply || '(no reply)');
             const images = payload.images || [];
-            list.removeChild(loadingNode);
+            removeLoading();
             addMessage('assistant', reply, images);
         } catch (e) {
-            list.removeChild(loadingNode);
-            const msg = String(e || '');
-            if (msg.includes('HTTP 501')) {
-                addMessage('assistant', 'You are currently running in static mode (e.g. python -m http.server). The static server does not support POST requests, so it returns 501.\n\nPlease run with Flask instead: http://127.0.0.1:5000/\nRun: python web/main.py');
+            removeLoading();
+            const msg = String(e && e.message || e);
+            if (e && e.noKey) {
+                renderKeySetup('Static mode: the Flask backend is not available here.');
                 return;
             }
-            addMessage('assistant', 'AI service is not running or the network is unavailable. Please run the project with Flask: http://127.0.0.1:5000/\nRun: python web/main.py\nError: ' + msg);
+            if (msg.includes('DeepSeek HTTP 401')) {
+                addMessage('assistant', 'DeepSeek rejected the API key (401). Please check the key and re-enter it.\nSend any message to open the key setup again.');
+                return;
+            }
+            addMessage('assistant', 'AI service error: ' + msg + '\n\nStatic mode uses the DeepSeek API directly — make sure your API key is set (send any message to configure it). If you run the project locally with Flask (python web/main.py), the full agent with stock & travel tools is available automatically.');
         }
     }
 
@@ -543,7 +654,7 @@ setInterval(syncSelectedCity, 1000);
         }
     });
 
-    addMessage('assistant', 'Hello! I can help with two things:\n1) Based on global news and current affairs, analyze the impact on A-shares and only recommend Chinese-listed stocks (SSE/SZSE, etc.);\n2) Based on the destination\'s future temperatures, give travel advice and show images of famous attractions.');
+    addMessage('assistant', 'Hello! I can help with two things:\n1) Based on global news and current affairs, analyze the impact on A-shares and only recommend Chinese-listed stocks (SSE/SZSE, etc.);\n2) Based on the destination\'s future temperatures, give travel advice and show images of famous attractions.\n\nTip: on this static site the AI answers via the DeepSeek API — if asked, paste your API key once (it stays in your browser). Running locally with Flask enables the full stock & travel agent.');
 })();
 </script>
     <script src="news.js"></script>
